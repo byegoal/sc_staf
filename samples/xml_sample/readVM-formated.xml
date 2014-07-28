@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+<vm SecurityGroupGUID="dd57b1c0-0a70-4201-9063-13a8da40ccae" SecurityGroupName="" autoProvision="off" encryptableDeviceCount="0" encryptedDeviceCount="2" encryptingDeviceCount="0" hostname="WIN-2008-R2" href="https://ms.lab.securecloud.com/Broker/API.svc/v3.5/vm/71181ff4-ae82-46fc-8202-25ae7c782ffd/" imageGUID="71181ff4-ae82-46fc-8202-25ae7c782ffd" imageID="71181FF4-AE82-46FC-8202-25AE7C782FFD" imageName="WIN-2008-R2" instanceGUID="af7a2997-9c51-4768-bf7c-7299f58e59ab" instanceID="" lastModified="2014-06-12T09:49:21" nonEncryptedDeviceCount="0" pendingDeviceCount="0" provisionedImageGUID="00000000-0000-0000-0000-000000000000" version="3.5" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<imageDescription/>
+	<provider name="Universal" providerLocation="10.201.227.181/255.255.255.0"/>
+	<platform>Windows_x64</platform>
+	<securecloudAgent agentStatus="online" agentVersion="3.6.0.1149" lastHeartbeat="2014-06-13T06:11:18"/>
+	<devices>
+		<device EncryptedName="" SkipEncryptCode="encryptable" cspDeviceType="root" detachable="false" deviceStatus="Encrypted" href="https://ms.lab.securecloud.com/Broker/API.svc/v3.5/device/8f8336b8-cda3-4c74-a3dd-ea80610c913a/" id="8F8336B8-CDA3-4C74-A3DD-EA80610C913A" info="" lastModified="2014-06-12T09:46:26" msUID="8f8336b8-cda3-4c74-a3dd-ea80610c913a" name="harddisk0" partitionType="mbr" preserveData="yes" provisionProgress="100" provisionState="complete" writeaccess="false">
+			<fileSystem>ntfs</fileSystem>
+			<partitionList>
+				<partition PartitionNumber="1" size="100.0 MB">
+					<mountPoint/>
+				</partition>
+				<partition PartitionNumber="2" size="29.9 GB">
+					<fileSystem>ntfs</fileSystem>
+					<mountPoint>C</mountPoint>
+				</partition>
+			</partitionList>
+			<description/>
+			<volume size="30.0 GB">
+				<mountPoint>C</mountPoint>
+			</volume>
+			<keyGen cipher="aes" keySize="0" storageType="Secure Cloud Server"/>
+		</device>
+		<device EncryptedName="" SkipEncryptCode="encryptable" cspDeviceType="general" detachable="false" deviceStatus="Encrypted" href="https://ms.lab.securecloud.com/Broker/API.svc/v3.5/device/825d70af-1f91-441c-956f-bcc55a2004fe/" id="825D70AF-1F91-441C-956F-BCC55A2004FE" info="" lastModified="2014-06-12T09:49:21" msUID="825d70af-1f91-441c-956f-bcc55a2004fe" name="harddisk1" partitionType="mbr" preserveData="yes" provisionProgress="100" provisionState="complete" writeaccess="false">
+			<fileSystem>ntfs</fileSystem>
+			<partitionList>
+				<partition PartitionNumber="1" size="97.0 MB">
+					<fileSystem>ntfs</fileSystem>
+					<mountPoint>G</mountPoint>
+				</partition>
+			</partitionList>
+			<description/>
+			<volume size="100.0 MB">
+				<mountPoint>G</mountPoint>
+			</volume>
+			<keyGen cipher="aes" keySize="0" storageType="Secure Cloud Server"/>
+		</device>
+	</devices>
+</vm>

@@ -1,0 +1,15 @@
+[core]
+	bare = false
+	repositoryformatversion = 0
+	filemode = false
+	symlinks = false
+	ignorecase = true
+	logallrefupdates = true
+[remote "sc_staf"]
+	url = https://github.com/shanehuang/sc_staf
+	fetch = +refs/heads/*:refs/remotes/sc_staf/*
+	puttykeyfile = C:\\chef\\chef-repo\\.chef\\mmik_us_east_1.ppk
+[remote "sc_test"]
+	url = https://github.com/shanehuang/sc_test
+	fetch = +refs/heads/*:refs/remotes/sc_test/*
+	puttykeyfile = C:\\chef\\chef-repo\\.chef\\mmik_us_east_1.ppk
