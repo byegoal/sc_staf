@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ResultElement TestItem="PerlTest">
+<ErrorCount>1</ErrorCount>
+<WarningCount>0</WarningCount>
+  <Incident>
+    <Message>some unexpected result</Message>
+    <Severity>Error</Severity>
+    <Detail>
+      <TestName>function main()</TestName>
+      <Info>some additional info; eg. stacktrace</Info>
+    </Detail>
+  </Incident>
+  <Incident>
+    <Message>some warning message</Message>
+    <Severity>Warning</Severity>
+    <Detail>
+      <TestName>function main()</TestName>
+      <Info>some additional info; eg. stacktrace</Info>
+    </Detail>
+  </Incident>
+</ResultElement>

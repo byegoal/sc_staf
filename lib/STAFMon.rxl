@@ -1,0 +1,98 @@
+/*****************************************************************************/
+/* Software Testing Automation Framework (STAF)                              */
+/* (C) Copyright IBM Corp. 2001                                              */
+/*                                                                           */
+/* This software is licensed under the Eclipse Public License (EPL) V1.0.    */
+/*****************************************************************************/
+
+/**********************************************************************/
+/* STAFMon.rxl - STAF Monitor REXX Library                            */
+/* By Charles Rankin and Don Randall (C) IBM 1999                     */
+/* Version 1.00                                                       */
+/**********************************************************************/
+/* Supplied Functions                                                 */
+/* ------------------                                                 */
+/* STAFMonitorErrorText - Initializes STAF Monitor error codes        */
+/* STAFMonitor          - Logs data to the Monitor service            */
+/*                                                                    */
+/* The following function is provided for compatibility with          */
+/* earlier releases of this library                                   */
+/*                                                                    */
+/* RxSTAFMonitor        - Maps to STAFMonitor                         */
+/**********************************************************************/
+/* Notes:                                                             */
+/*                                                                    */
+/* 1) All the above routines assume that the variable STAFHandle      */
+/*    contains the registered STAF handle.                            */
+/* 2) If these functions are called from within any PROCEDURE, the    */
+/*    variables STAFHandle and STAFResult must be EXPOSEd.            */
+/* 3) All the above routines assume the monitor service is actually   */
+/*    registered under the name MONITOR                               */
+/**********************************************************************/
+
+#Function All
+#From STAFMon Import STAFMonitorErrorText STAFMonitor RxSTAFMonitor
+#End
+
+
+#Function STAFMonitorErrorText
+/***********************************************************************/
+/* STAFMonitorErrorText - Initializes STAF Monitor Service error codes */
+/*                                                                     */
+/* Accepts: Nothing                                                    */
+/*                                                                     */
+/* Returns: 0                                                          */
+/***********************************************************************/
+STAFMonitorErrorText:
+
+  STAFMonitorError.!InvalidDirectory = 4005
+  STAFMonitorError.!InvalidDirectory.!Text = "Invalid Directory"
+  STAFMonitorError.!CreateDirectoryError = 4006
+  STAFMonitorError.!CreateDirectoryError.!Text = "Create Directory Error"
+  STAFMonitorError.!InvalidLogFileFormat = 4007
+  STAFMonitorError.!InvalidLogFileFormat.!Text = "Invalid Log File Format"
+
+  RETURN 0
+
+/* End of STAFMonitorErrorText */
+
+#End
+
+
+#Function STAFMonitor
+/******************************************************************/
+/* STAFMonitor - Logs data to the STAF Monitor Service            */
+/*                                                                */
+/* Accepts: The message to log to the Monitor service             */
+/*          Optionally, an extra Monitor LOG options              */
+/*                                                                */
+/* Returns: 0 , if successful                                     */
+/*          >0, if not successful                                 */
+/******************************************************************/
+STAFMonitor: PROCEDURE EXPOSE STAFHandle STAFResult
+
+  parse arg message, options
+
+  RETURN STAFSubmit("LOCAL", "MONITOR", "LOG MESSAGE",
+                    STAFWrapData(message) options)
+
+/* End of STAFMonitor */
+
+#From STAFUtil Import STAFWrapData
+
+#End
+
+
+#Function RxSTAFMonitor
+/************************************************************/
+/* RxSTAFMonitor - Compatibility wrapper around STAFMonitor */
+/************************************************************/
+RxSTAFMonitor:
+
+  parse arg RSM_Message, RSM_Options
+
+  RETURN STAFMonitor(RSM_Message, RSM_Options)
+
+/* End of RxSTAFMonitor */
+
+#End

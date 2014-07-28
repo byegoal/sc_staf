@@ -1,0 +1,227 @@
+/*****************************************************************************/
+/* Software Testing Automation Framework (STAF)                              */
+/* (C) Copyright IBM Corp. 2001                                              */
+/*                                                                           */
+/* This software is licensed under the Eclipse Public License (EPL) V1.0.    */
+/*****************************************************************************/
+
+/**********************************************************************/
+/* STAFLog.rxl - STAF Logging REXX Library                            */
+/* By Charles Rankin and Don Randall (C) IBM 1999                     */
+/* Version 1.00                                                       */
+/**********************************************************************/
+/* Supplied Functions                                                 */
+/* ------------------                                                 */
+/* STAFLogErrorText  - Initializes STAF Logging error codes           */
+/* STAFInitLog       - Initializes the data structures used for       */
+/*                     logging to a particular STAF log               */
+/* STAFSetCurrentLog - Sets the current log                           */
+/* STAFLog           - Logs data to the current log                   */
+/*                                                                    */
+/* The following functions are provided for compatibility with        */
+/* earlier releases of this library                                   */
+/*                                                                    */
+/* RxSTAFInitLog       - Maps to STAFInitLog                          */
+/* RxSTAFSetCurrentLog - Maps to STAFSetCurrentLog                    */
+/* RxSTAFLog           - Maps to STAFLog                              */
+/**********************************************************************/
+/* Notes:                                                             */
+/*                                                                    */
+/* 1) All the above routines assume that the variable STAFHandle      */
+/*    contains the registered STAF handle.                            */
+/* 2) If these functions are called from within any PROCEDURE, the    */
+/*    stem variable STAFLog. must be EXPOSEd, as well as, STAFHandle  */
+/*    and STAFResult.                                                 */
+/* 3) All the above routines assume the logging service is actually   */
+/*    registered under the name LOG                                   */
+/**********************************************************************/
+
+#Function All
+#From STAFLog Import STAFLogErrorText STAFLog STAFSetCurrentLog STAFInitLog RxSTAFInitLog RxSTAFSetCurrentLog RxSTAFLog
+#End
+
+
+#Function STAFLogErrorText
+/***************************************************************/
+/* STAFLogErrorText - Initializes STAF Log Service error codes */
+/*                                                             */
+/* Accepts: Nothing                                            */
+/*                                                             */
+/* Returns: 0                                                  */
+/***************************************************************/
+STAFLogErrorText:
+
+  STAFLogError.!InvalidNumber = 4001
+  STAFLogError.!InvalidNumber.!Text = "Invalid Number"
+  STAFLogError.!InvalidDate = 4002
+  STAFLogError.!InvalidDate.!Text = "Invalid Date"
+  STAFLogError.!InvalidTime = 4003
+  STAFLogError.!InvalidTime.!Text = "Invalid Time"
+  STAFLogError.!InvalidLevel = 4004
+  STAFLogError.!InvalidLevel.!Text = "Invalid Level"
+  STAFLogError.!InvalidDirectory = 4005
+  STAFLogError.!InvalidDirectory.!Text = "Invalid Directory"
+  STAFLogError.!CreateDirectoryError = 4006
+  STAFLogError.!CreateDirectoryError.!Text = "Create Directory Error"
+  STAFLogError.!InvalidLogFileFormat = 4007
+  STAFLogError.!InvalidLogFileFormat.!Text = "Invalid Log File Format"
+  STAFLogError.!PurgeFailure = 4008
+  STAFLogError.!PurgeFailure.!Text = "Purge Failure"
+  STAFLogError.!UnknownRemoteLogServer = 4009
+  STAFLogError.!UnknownRemoteLogServer.!Text = "Unknown Remote Log Server"
+
+  RETURN 0
+
+/* End of STAFLogErrorText */
+
+#End
+
+
+#Function STAFInitLog
+/******************************************************************/
+/* STAFInitLog - Initializes a logging structure used to log data */
+/*               to the STAF Log Service                          */
+/*                                                                */
+/* Accepts: A name used to refer to this log in the future        */
+/*          The name of the log to write to                       */
+/*          Optionally, the type of the log (default = "MACHINE") */
+/*          Optionally, a mask used to indicate which logging     */
+/*            levels should also be sent to the STAF Monitor      */
+/*            Service (default =                                  */
+/*            "FATAL ERROR WARNING INFO STATUS"                   */
+/*                                                                */
+/* Returns: 0 , if successful                                     */
+/*          >0, if not successful                                 */
+/******************************************************************/
+STAFInitLog: PROCEDURE EXPOSE STAFHandle STAFResult STAFLog.
+
+  parse arg logRef, logName, logType, monitorMask
+
+  if logType = "" then logType = "MACHINE"
+  if monitorMask = "" then monitorMask = "FATAL ERROR WARNING INFO STATUS"
+
+  STAFLog.!CurrentReference.!Name = logName
+  STAFLog.!CurrentReference.!Type = logType
+  STAFLog.!CurrentReference.!Monitormask = monitorMask
+
+  call VALUE "STAFLog.!Reference.!"logRef".!Name", logName
+  call VALUE "STAFLog.!Reference.!"logRef".!Type", logType
+  call VALUE "STAFLog.!Reference.!"logRef".!MonitorMask", monitorMask
+
+  RETURN 0
+
+/* End of STAFInitLog */
+
+#End
+
+
+#Function STAFSetCurrentLog
+/******************************************************************/
+/* STAFSetCurrentLog - Sets the current log to the indicated log  */
+/*                     reference.                                 */
+/*                                                                */
+/* Accepts: The log reference to which to set the current log     */
+/*                                                                */
+/* Returns: 0 , if successful                                     */
+/*          >0, if not successful                                 */
+/******************************************************************/
+STAFSetCurrentLog: PROCEDURE EXPOSE STAFHandle STAFResult STAFLog.
+
+  parse arg logRef
+
+  STAFLog.!CurrentReference.!Name =,
+      VALUE("STAFLog.!Reference.!"logRef".!Name")
+  STAFLog.!CurrentReference.!Type =,
+      VALUE("STAFLog.!Reference.!"logRef".!Type")
+  STAFLog.!CurrentReference.!Monitormask =,
+      VALUE("STAFLog.!Reference.!"logRef".!MonitorMask")
+
+  RETURN 0
+
+/* End of STAFSetCurrentLog */
+
+#End
+
+
+#Function STAFLog
+/******************************************************************/
+/* STAFLog - Logs a message to the STAF Log Service               */
+/*                                                                */
+/* Accepts: The logging level                                     */
+/*          The message to log                                    */
+/*          Optionally, any extra parameters to the LOG command   */
+/*                                                                */
+/* Returns: 0 , if successful                                     */
+/*          >0, if not successful                                 */
+/******************************************************************/
+STAFLog: PROCEDURE EXPOSE STAFHandle STAFResult STAFLog.
+
+  parse arg logLevel, logMessage, logOptions
+
+  logRC = STAFSubmit("LOCAL", "LOG", "LOG" STAFLog.!CurrentReference.!Type,
+                     "LOGNAME" STAFWrapData(STAFLog.!CurrentReference.!Name),
+                     "LEVEL" logLevel "MESSAGE" STAFWrapData(logMessage),
+                     logOptions)
+
+  if WORDPOS(logLevel, STAFLog.!CurrentReference.!Monitormask) \= 0 then
+      call STAFMonitor logLevel":"logMessage, logOptions
+
+  RETURN logRC
+
+/* End of STAFLog */
+
+#From STAFUtil Import STAFWrapData
+#From STAFMon Import STAFMonitor
+
+#End
+
+
+#Function RxSTAFInitLog
+/************************************************************/
+/* RxSTAFInitLog - Compatibility wrapper around STAFInitLog */
+/************************************************************/
+RxSTAFInitLog:
+
+  parse arg RSIL_LogRef, RSIL_LogName, RSIL_LogType, RSIL_MonitorMask
+
+  RETURN STAFInitLog(RSIL_LogRef, RSIL_LogName, RSIL_LogType, RSIL_MonitorMask)
+
+/* End of RxSTAFInitLog */
+
+#From STAFLog Import STAFInitLog
+
+#End
+
+
+#Function RxSTAFSetCurrentLog
+/************************************************************************/
+/* RxSTAFSetCurrentLog - Compatibility wrapper around STAFSetCurrentLog */
+/************************************************************************/
+RxSTAFSetCurrentLog:
+
+  parse arg RSSCL_LogRef
+
+  RETURN STAFSetCurrentLog(RSSCL_LogRef)
+
+/* End of RxSTAFSetCurrentLog */
+
+#From STAFLog Import STAFSetCurrentLog
+
+#End
+
+
+#Function RxSTAFLog
+/****************************************************/
+/* RxSTAFLog - Compatibility wrapper around STAFLog */
+/****************************************************/
+RxSTAFLog:
+
+  parse arg RSL_LogLevel, RSL_LogMessage, RSL_LogOptions
+
+  RETURN STAFLog(RSL_LogLevel, RSL_LogMessage, RSL_LogOptions)
+
+/* End of RxSTAFLog */
+
+#From STAFLog Import STAFLog
+
+#End

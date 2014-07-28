@@ -1,0 +1,209 @@
+/*****************************************************************************/
+/* Software Testing Automation Framework (STAF)                              */
+/* (C) Copyright IBM Corp. 2001                                              */
+/*                                                                           */
+/* This software is licensed under the Eclipse Public License (EPL) V1.0.    */
+/*****************************************************************************/
+
+/******************************************************************************/
+/* STAFUtil.rxl - STAF Utility REXX Library                                   */
+/* By Charles Rankin and Don Randall (C) IBM 1999                             */
+/* Version: 1.00                                                              */
+/******************************************************************************/
+/* Supplied Functions                                                         */
+/* ------------------                                                         */
+/* STAFWrapData - Generates the colon-delimited version of a string           */
+/* MakeSTAFResult - Creates a STAF Service result string (only used by        */
+/*                  service providers)                                        */
+/* STAFErrorText - Initializes general STAF error codes                       */
+/* STAFSyncValues - Defines the synchronous/asynchronous submit values        */
+/******************************************************************************/
+
+#Function All
+#From STAFUtil Import STAFWrapData MakeSTAFResult STAFErrorText STAFSyncValues
+#End
+
+
+#Function STAFWrapData
+/******************************************************************************/
+/* STAFWrapData - Wraps a REXX String using colon delimited STAF format       */
+/* Accepts: A REXX string                                                     */
+/* Returns: Colon-delimited version of input string                           */
+/******************************************************************************/
+STAFWrapData: PROCEDURE
+  parse arg data
+  RETURN ":"LENGTH(data)":"data
+/* End of STAFWrapData */
+#End
+
+
+#Function MakeSTAFResult
+/******************************************************************************/
+/* MakeSTAFResult - Creates REXX STAFResult string                            */
+/* Accepts: The service return code                                           */
+/*          The service result string                                         */
+/* Returns: The STAFResult string                                             */
+/******************************************************************************/
+MakeSTAFResult: PROCEDURE
+  parse arg theRC, resultString
+  RETURN REVERSE(D2C(theRC, 4)) || resultString
+/* End of MakeSTAFResult */
+#End
+
+
+#Function STAFErrorText
+/******************************************************************************/
+/* STAFErrorText - STAF defined error codes and text.                         */
+/* Accepts: Nothing                                                           */
+/* Returns: 0                                                                 */
+/******************************************************************************/
+STAFErrorText: PROCEDURE EXPOSE STAFError.
+
+  STAFError.!Ok = 0
+  STAFError.!Ok.!Text = "No Error"
+  STAFError.!InvalidAPI = 1
+  STAFError.!InvalidAPI.!Text = "Invalid API"
+  STAFError.!UnknownService = 2
+  STAFError.!UnknownService.!Text = "Unknown Service"
+  STAFError.!InvalidHandle = 3
+  STAFError.!InvalidHandle.!Text = "Invalid Handle"
+  STAFError.!HandleAlreadyExists = 4
+  STAFError.!HandleAlreadyExists.!Text = "Handle Already Exists"
+  STAFError.!HandleDoesNotExist = 5
+  STAFError.!HandleDoesNotExist.!Text = "Handle Does Not Exist"
+  STAFError.!UnknownError = 6
+  STAFError.!UnknownError.!Text = "Unknown Error"
+  STAFError.!InvalidRequestString = 7
+  STAFError.!InvalidRequestString.!Text = "Invalid Request String"
+  STAFError.!InvalidServiceResult = 8
+  STAFError.!InvalidServiceResult.!Text = "Invalid Service Result"
+  STAFError.!REXXError = 9
+  STAFError.!REXXError.!Text = "Rexx Error"
+  STAFError.!BaseOSError = 10
+  STAFError.!BaseOSError.!Text = "Base OS Error"
+  STAFError.!ProcessAlreadyComplete = 11
+  STAFError.!ProcessAlreadyComplete.!Text = "Process Already Complete"
+  STAFError.!ProcessNotComplete = 12
+  STAFError.!ProcessNotComplete.!Text = "Process Not Complete"
+  STAFError.!VariableDoesNotExist = 13
+  STAFError.!VariableDoesNotExist.!Text = "Variable Does Not Exist"
+  STAFError.!UnResolvableString = 14
+  STAFError.!UnResolvableString.!Text = "UnResolvable String"
+  STAFError.!InvalidResolveString = 15
+  STAFError.!InvalidResolveString.!Text = "Invalid Resolve String"
+  STAFError.!NoPathToMachine = 16
+  STAFError.!NoPathToMachine.!Text = "No Path To Endpoint"
+  STAFError.!FileOpenError = 17
+  STAFError.!FileOpenError.!Text = "File Open Error"
+  STAFError.!FileReadError = 18
+  STAFError.!FileReadError.!Text = "File Read Error"
+  STAFError.!FileWriteError = 19
+  STAFError.!FileWriteError.!Text = "File Write Error"
+  STAFError.!FileDeleteError = 20
+  STAFError.!FileDeleteError.!Text = "File Delete Error"
+  STAFError.!STAFNotRunning = 21
+  STAFError.!STAFNotRunning.!Text = "STAF Not Running"
+  STAFError.!CommunicationError = 22
+  STAFError.!CommunicationError.!Text = "Communication Error"
+  STAFError.!TrusteeDoesNotExist = 23
+  STAFError.!TrusteeDoesNotExist.!Text = "Trustee Does Not Exist"
+  STAFError.!InvalidTrustLevel = 24
+  STAFError.!InvalidTrustLevel.!Text = "Invalid Trust Level"
+  STAFError.!AccessDenied = 25
+  STAFError.!AccessDenied.!Text = "Insufficient Trust Level"
+  STAFError.!STAFRegistrationError = 26
+  STAFError.!STAFRegistrationError.!Text = "STAF Registration Error"
+  STAFError.!ServiceConfigurationError = 27
+  STAFError.!ServiceConfigurationError.!Text = "Service Configuration Error"
+  STAFError.!QueueFull = 28
+  STAFError.!QueueFull.!Text = "Queue Full"
+  STAFError.!NoQueueElement = 29
+  STAFError.!NoQueueElement.!Text = "No Queue Element"
+  STAFError.!NotifieeDoesNotExist = 30
+  STAFError.!NotifieeDoesNotExist.!Text = "Notifiee Does Not Exist"
+  STAFError.!InvalidAPILevel = 31
+  STAFError.!InvalidAPILevel.!Text = "Invalid API Level"
+  STAFError.!ServiceNotUnregisterable = 32
+  STAFError.!ServiceNotUnregisterable.!Text = "Service Not Unregisterable"
+  STAFError.!ServiceNotAvailable = 33
+  STAFError.!ServiceNotAvailable.!Text = "Service Not Available"
+  STAFError.!SemaphoreDoesNotExist = 34
+  STAFError.!SemaphoreDoesNotExist.!Text = "Semaphore Does Not Exist"
+  STAFError.!NotSemaphoreOwner = 35
+  STAFError.!NotSemaphoreOwner.!Text = "Not Semaphore Owner"
+  STAFError.!SemaphoreHasPendingRequests = 36
+  STAFError.!SemaphoreHasPendingRequests.!Text = "Semaphore Has Pending Requests"
+  STAFError.!Timeout = 37
+  STAFError.!Timeout.!Text = "Timeout"
+  STAFError.!JavaError = 38
+  STAFError.!JavaError.!Text = "Java Error"
+  STAFError.!ConverterError = 39
+  STAFError.!ConverterError.!Text = "Converter Error"
+  STAFError.!MoveError = 40
+  STAFError.!MoveError.!Text = "Move Error"
+  STAFError.!InvalidObject = 41
+  STAFError.!InvalidObject.!Text = "Invalid Object"
+  STAFError.!InvalidParm = 42
+  STAFError.!InvalidParm.!Text = "Invalid Parm"
+  STAFError.!RequestNumberNotFound = 43
+  STAFError.!RequestNumberNotFound.!Text = "Request Number Not Found"
+  STAFError.!InvalidAsynchOption = 44
+  STAFError.!InvalidAsynchOption.!Text = "Invalid Asynch Option"
+  STAFError.!RequestNotComplete = 45
+  STAFError.!RequestNotComplete.!Text = "Request Not Complete"
+  STAFError.!ProcessAuthenticationDenied = 46
+  STAFError.!ProcessAuthenticationDenied.!Text = "Process Authentication Denied"
+  STAFError.!InvalidValue = 47
+  STAFError.!InvalidValue.!Text = "Invalid Value"
+  STAFError.!DoesNotExist = 48
+  STAFError.!DoesNotExist.!Text = "Does Not Exist"
+  STAFError.!AlreadyExists = 49
+  STAFError.!AlreadyExists.!Text = "Already Exists"
+  STAFError.!DirectoryNotEmpty = 50
+  STAFError.!DirectoryNotEmpty.!Text = "Directory Not Empty"
+  STAFError.!DirectoryCopyError = 51
+  STAFError.!DirectoryCopyError.!Text = "Directory Copy Error"
+  STAFError.!DiagnosticsNotEnabled = 52
+  STAFError.!DiagnosticsNotEnabled.!Text = "Diagnostics Not Enabled"
+  STAFError.!HandeAuthenticationDenied = 53
+  STAFError.!HandleAuthenticationDenied.!Text = "Handle Authentication Denied"
+  STAFError.!HandeAlreadyAuthenticated = 54
+  STAFError.!HandleAlreadyAuthenticated.!Text = "Handle Already Authenticated"
+  STAFError.!InvalidSTAFVersion = 55
+  STAFError.!InvalidSTAFVersion.!Text = "Invalid STAF Version"
+  STAFError.!RequestCancelled = 56
+  STAFError.!RequestCancelled.!Text = "Request Cancelled"
+  STAFError.!CreateThreadError = 57
+  STAFError.!CreateThreadError.!Text = "Create Thread Error"
+  STAFError.!MaximumSizeExceeded = 58
+  STAFError.!MaximumSizeExceeded.!Text = "Maximum Size Exceeded"
+  STAFError.!MaximumHandlesExceeded = 59
+  STAFError.!MaximumHandlesExceeded.!Text = "Maximum Handles Exceeded"
+  STAFError.!NotRequester = 60
+  STAFError.!NotRequester.!Text = "Not Pending Requester"
+  STAFError.!TotalCodes = 60
+  STAFError.!UserStartCodes = 4000  
+
+  RETURN 0
+
+/* End of STAFErrorText */
+#End
+
+#Function STAFSyncValues
+/******************************************************************************/
+/* STAFSyncValues - STAF synchronous/asynchronous submit values.              */
+/* Accepts: Nothing                                                           */
+/* Returns: 0                                                                 */
+/******************************************************************************/
+STAFSyncValues: PROCEDURE EXPOSE STAFSync.
+  
+  STAFSync.!ReqSync = 0
+  STAFSync.!ReqFireAndForget = 1
+  STAFSync.!ReqQueue = 2
+  STAFSync.!ReqRetain = 3
+  STAFSync.!ReqQueueRetain = 4
+
+  RETURN 0
+
+/* End of STAFSyncValues */
+#End

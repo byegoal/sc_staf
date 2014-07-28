@@ -1,0 +1,136 @@
+/*****************************************************************************/
+/* Software Testing Automation Framework (STAF)                              */
+/* (C) Copyright IBM Corp. 2001                                              */
+/*                                                                           */
+/* This software is licensed under the Eclipse Public License (EPL) V1.0.    */
+/*****************************************************************************/
+
+/**********************************************************************/
+/* STAFPool.rxl - STAF Resource Pool REXX Library                     */
+/* By Charles Rankin and Don Randall (C) IBM 1999                     */
+/* Version 1.00                                                       */
+/**********************************************************************/
+/* Supplied Functions                                                 */
+/* ------------------                                                 */
+/* STAFPoolErrorText - Initializes STAF Resource Pool error codes     */
+/* STAFPoolRequest   - Requests an entry from resource pool           */
+/* STAFPoolRelease   - Releases a resource pool entry                 */
+/**********************************************************************/
+/* Notes:                                                             */
+/*                                                                    */
+/* 1) All the above routines assume that the variable STAFHandle      */
+/*    contains the registered STAF handle.                            */
+/* 2) If these functions are called from within any PROCEDURE, the    */
+/* 3) All the above routines assume the resource pool service is      */
+/*    actually registered under the name RESPOOL                      */
+/**********************************************************************/
+
+#Function All
+#From STAFPool Import STAFPoolErrorText STAFPoolRequest STAFPoolRelease
+#End
+
+#Function STAFPoolErrorText
+/*************************************************************/
+/* STAFPoolErrorText - Initializes STAFPool error messages   */
+/*                                                           */
+/* Accepts: Nothing                                          */
+/*                                                           */
+/* Returns: 0                                                */
+/*************************************************************/
+STAFPoolErrorText:
+
+  STAFPoolError.!PoolAlreadyExists = 4001
+  STAFPoolError.!PoolAlreadyExists.!Text = "Resource pool already exists"
+  STAFPoolError.!PoolDoesNotExist = 4002
+  STAFPoolError.!PoolDoesNotExist.!Text = "Resource pool not found"
+  STAFPoolError.!EntryDoesNotExist = 4003
+  STAFPoolError.!EntryDoesNotExist.!Text = "Resource pool entry does not exist"
+  STAFPoolError.!EntryAlreadyExists = 4004
+  STAFPoolError.!EntryAlreadyExists.!Text = "Resource pool entry already exists"
+  STAFPoolError.!NotEntryOwner = 4005
+  STAFPoolError.!NotEntryOwner.!Text = "Not resource pool entry owner"
+  STAFPoolError.!PoolHasPendingRequests = 4006
+  STAFPoolError.!PoolHasPendingRequests.!Text = "Resource pool has pending requests"
+  STAFPoolError.!NoEntriesAvailable = 4007
+  STAFPoolError.!NoEntriesAvailable.!Text = "Resource pool has no entries available"
+  STAFPoolError.!CreatePoolPath = 4008
+  STAFPoolError.!CreatePoolPath.!Text = "Error creating pool path"
+  STAFPoolError.!PoolFileVersionError = 4009
+  STAFPoolError.!PoolFileVersionError.!Text = "Invalid pool file format"
+  STAFPoolError.!EntryIsOwned = 4010
+  STAFPoolError.!EntryIsOwned.!Text = "Resource pool entry is owned"
+
+  RETURN 0
+
+/* End of STAFPoolErrorText */
+
+#End
+
+
+#Function STAFPoolRequest
+/******************************************************************/
+/* STAFPoolRequest - Requests an entry from a resource pool       */
+/*                                                                */
+/* Accepts: The name of the pool from which to obtain the entry   */
+/*          The name of the variable to in which to place the     */
+/*            value of the requested entry                        */
+/*          Optionally, whether the first available entry or a    */
+/*            random entry should be returned (FIRST or RANDOM)   */
+/*            (default = RANDOM)                                  */
+/*          Optionally, an amount of time (in milliseconds) after */
+/*            which the request should time out (default is to    */
+/*            wait indefinitely)                                  */
+/*                                                                */
+/* Returns: 0 , if successful                                     */
+/*          >0, if not successful                                 */
+/******************************************************************/
+STAFPoolRequest:
+
+  parse arg SPR_PoolName, SPR_VarName, SPR_Which, SPR_Timeout
+
+  SPR_Which = TRANSLATE(SPR_Which)
+
+  if SPR_Which \= "FIRST" then SPR_Which = "RANDOM"
+  if SPR_Timeout \= "" then SPR_Timeout = "TIMEOUT" SPR_Timeout
+
+  SPR_STAFRC = STAFSubmit("LOCAL", "RESPOOL", "REQUEST POOL",
+                          STAFWrapData(SPR_PoolName) SPR_Timeout SPR_Which)
+
+  if SPR_STAFRC = 0 then
+      call VALUE SPR_VarName, STAFResult
+
+  RETURN SPR_STAFRC
+
+/* End fo STAFPoolRequest */
+
+#End
+
+
+#Function STAFPoolRelease
+/******************************************************************/
+/* STAFPoolRelease - Releases a resource pool entry               */
+/*                                                                */
+/* Accepts: The name of the pool from which the entry was         */
+/*            obtained                                            */
+/*          The resource pool entry                               */
+/*          Optionally, a flag indicating whether the entry       */
+/*            should be released with FORCE (0 = NOFORCE,         */
+/*            1 = FORCE) (default = NOFORCE)                      */
+/*                                                                */
+/* Returns: 0 , if successful                                     */
+/*          >0, if not successful                                 */
+/******************************************************************/
+STAFPoolRelease:
+
+  parse arg SPR_PoolName, SPR_Entry, SPR_Force
+
+  if SPR_Force = 1 then SPR_Force = "FORCE"
+  else SPR_Force = ""
+
+  RETURN STAFSubmit("LOCAL", "RESPOOL", "RELEASE POOL",
+                    STAFWrapData(SPR_PoolName) "ENTRY",
+                    STAFWrapData(SPR_Entry) SPR_Force)
+
+/* End of STAFPoolRelease */
+
+#End

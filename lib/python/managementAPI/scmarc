@@ -1,0 +1,7 @@
+[sc]
+#https://console.cloud9.identum.com/Signin.mvc/UserAPIKeys
+base_uri = https://ms.cloud9.identum.com:7443/broker/api.svc/
+access_key_id = Rs4156CpjKC6amV9I10x
+secret_access_key = W5YgT7Qkfxnu2me7D2INsxnTkBaOwEZKBxZs8OTS
+brokername = danny1
+passphrase = 1234ab

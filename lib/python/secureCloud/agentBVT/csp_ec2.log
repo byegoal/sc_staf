@@ -1,0 +1,13 @@
+INFO:root:change AKI for instance: i-2337d575
+INFO:root:start instance: i-2337d575
+INFO:root:change AKI for instance: i-dd151c8a
+INFO:root:start instance: i-dd151c8a
+INFO:root:change AKI for instance: i-dd151c8a
+INFO:root:start instance: i-dd151c8a
+INFO:root:change AKI for instance: i-dd151c8a
+INFO:root:start instance: i-dd151c8a
+INFO:ec2_csp:change AKI for instance: i-dd151c8a
+INFO:ec2_csp:start instance: i-dd151c8a
+DEBUG:ec2_csp:instance_state: stopped
+INFO:ec2_csp:change AKI for instance: i-dd151c8a
+INFO:ec2_csp:start instance: i-dd151c8a

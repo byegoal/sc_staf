@@ -1,0 +1,802 @@
+/*****************************************************************************/
+/* Software Testing Automation Framework (STAF)                              */
+/* (C) Copyright IBM Corp. 2001                                              */
+/*                                                                           */
+/* This software is licensed under the Eclipse Public License (EPL) V1.0.    */
+/*****************************************************************************/
+
+/******************************************************************************/
+/* STAFCPar.rxl - STAF Command Parser REXX Library                            */
+/* By Charles Rankin and Don Randall (C) IBM 1999                             */
+/* Version: 1.00                                                              */
+/******************************************************************************/
+/* Supplied Functions                                                         */
+/* ------------------                                                         */
+/* InitParser       - Initializes a command parser                            */
+/* SetCurrentParser - Sets the current parser                                 */
+/* AddOption        - Adds an option to the current parser                    */
+/* AddOptionGroup   - Adds an option group to the current parser              */
+/* AddOptionNeed    - Adds an option need to the current parser               */
+/* SetMaxArguments  - Sets the maximum allowable arguments for the current    */
+/*                    parser                                                  */
+/* ParseString      - Parses a given string                                   */
+/* OptionTimes      - Determines the number of times an option was specified  */
+/* OptionValue      - Determines the value of a named option                  */
+/* NumInstances     - Determines the number of options specified              */
+/* InstanceName     - Determines the name of a given option                   */
+/* InstanceValue    - Determines the value of a given option                  */
+/* NumArguments     - Determines the number of arguments specified            */
+/* Argument         - Determines the value of a given argument                */
+/******************************************************************************/
+/* Note: All these functions are case insensitive with regards to option      */
+/*       names                                                                */
+/******************************************************************************/
+
+#Function All
+#From STAFCPar Import InitParser SetCurrentParser AddOption AddOptionGroup AddOptionNeed SetMaxArguments ParseString OptionTimes OptionValue NumInstances InstanceName InstanceValue NumArguments Argument
+#End
+
+
+#Function InitParser
+/******************************************************************************/
+/* InitParser - Initializes a command parser                                  */
+/*                                                                            */
+/* Accepts: Optionally, the name of the parser to initialize                  */
+/*            (default = DEFAULT)                                             */
+/*                                                                            */
+/* Returns: 0                                                                 */
+/******************************************************************************/
+InitParser:
+
+  parse arg IP_ParserName
+
+  call SetCurrentParser IP_ParserName
+
+  STAFCommandParser.!Option.SCP_CurrentParser.0 = 0
+  STAFCommandParser.!OptionGroup.SCP_CurrentParser.0 = 0
+  STAFCommandParser.!OptionNeed.SCP_CurrentParser.0 = 0
+  STAFCommandParser.!MaxArguments.SCP_CurrentParser = 0
+
+  RETURN 0
+
+/* End of InitParser */
+
+#From STAFCPar Import SetCurrentParser
+
+#End
+
+
+#Function SetCurrentParser
+/******************************************************************************/
+/* SetCurrentParser - Sets the current parser                                 */
+/*                                                                            */
+/* Accepts: Optionally, the name of the parser to make current                */
+/*            (default = DEFAULT)                                             */
+/*                                                                            */
+/* Returns: 0                                                                 */
+/******************************************************************************/
+SetCurrentParser:
+
+  parse arg SCP_CurrentParser
+
+  if SCP_CurrentParser = "" then SCP_CurrentParser = "DEFAULT"
+
+  SCP_CurrentParser = TRANSLATE(SCP_CurrentParser)
+
+  RETURN 0
+
+/* End of SetCurrentParser */
+
+#End
+
+
+#Function SetMaxArguments
+/******************************************************************************/
+/* SetMaxArguments - Sets the maximum number of allowable arguments           */
+/*                                                                            */
+/* Accepts: The maximum number of arguments                                   */
+/*                                                                            */
+/* Returns: 0                                                                 */
+/******************************************************************************/
+SetMaxArguments:
+
+  parse arg SMA_NumArgs
+
+  STAFCommandParser.!MaxArguments.SCP_CurrentParser = SMA_NumArgs
+
+  RETURN 0
+
+/* End of SetMaxArguments */
+
+#End
+
+
+#Function AddOption
+/******************************************************************************/
+/* AddOption - Adds an option to the current parser                           */
+/*                                                                            */
+/* Accepts: The name of the option                                            */
+/*          The number of times the option is allowed to be specified         */
+/*            (0 = unlimited)                                                 */
+/*          A value indicating if a value should be specified with the option */
+/*                                                                            */
+/*              YES     = A value must be specified with the option           */
+/*              ALLOWED = A value may be specified with the option            */
+/*              NO      = A value may not be specified with the option        */
+/*                                                                            */
+/* Returns: 0                                                                 */
+/******************************************************************************/
+AddOption:
+
+  parse arg AO_Name, AO_Times, AO_Required
+
+  STAFCommandParser.!Option.SCP_CurrentParser.0 =,
+      STAFCommandParser.!Option.SCP_CurrentParser.0 + 1
+
+  AO_Index = STAFCommandParser.!Option.SCP_CurrentParser.0
+  STAFCommandParser.!Option.SCP_CurrentParser.AO_Index.!Name = AO_Name
+  STAFCommandParser.!Option.SCP_CurrentParser.AO_Index.!Times = AO_Times
+  STAFCommandParser.!Option.SCP_CurrentParser.AO_Index.!ValueRequired =,
+      TRANSLATE(AO_Required)
+
+  RETURN 0
+
+/* End of AddOption */
+
+#End
+
+
+#Function AddOptionGroup
+/******************************************************************************/
+/* AddOptionGroup - Adds an option group to the parser.  An option group      */
+/*                  allows you to specify mutually exclusive options.         */
+/*                                                                            */
+/* Accepts: A space separated list of the options in the group                */
+/*          The minimum number of options in the group that must be specified */
+/*          The maximum number of options in the group that may be specified  */
+/*                                                                            */
+/* Returns: 0                                                                 */
+/******************************************************************************/
+/* Note                                                                       */
+/* ----                                                                       */
+/*                                                                            */
+/* The most common values for minimum and maximum are 1 and 1, which states   */
+/* that one and only one of the options in the group must be specified.       */
+/* Another common set of values are 0 and 1, which states that none of the    */
+/* options must be specified, but at most, only 1 may be specified.           */
+/******************************************************************************/
+AddOptionGroup:
+
+  parse arg AOG_Group, AOG_Min, AOG_Max
+
+  STAFCommandParser.!OptionGroup.SCP_CurrentParser.0 =,
+      STAFCommandParser.!OptionGroup.SCP_CurrentParser.0 + 1
+
+  AOG_Index = STAFCommandParser.!OptionGroup.SCP_CurrentParser.0
+  STAFCommandParser.!OptionGroup.SCP_CurrentParser.AOG_Index.!Group = AOG_Group
+  STAFCommandParser.!OptionGroup.SCP_CurrentParser.AOG_Index.!Minimum = AOG_Min
+  STAFCommandParser.!OptionGroup.SCP_CurrentParser.AOG_Index.!Maximum = AOG_Max
+
+  RETURN 0
+
+/* End of AddOptionGroup */
+
+#End
+
+
+#Function AddOptionNeed
+/******************************************************************************/
+/* AddOptionNeed - Adds an option need to the parser.  An option need allows  */
+/*                 you to specify that one of a set of options must be        */
+/*                 specified when one of another set of options is specified. */
+/*                                                                            */
+/* Accepts: A space separated list of the options which need another option   */
+/*          A space separated list of options which must be specifed if an    */
+/*            option in the first group is specified                          */
+/*                                                                            */
+/* Returns: 0                                                                 */
+/******************************************************************************/
+/* Note                                                                       */
+/* ----                                                                       */
+/*                                                                            */
+/* An example of an option need is if a user was not required to specify a    */
+/* userid and password, but if they specified the userid, then they must      */
+/* also specify the password.  In this case, the userid option would need the */
+/* password option.                                                           */
+/*                                                                            */
+/* Be aware that an option need is only one way.  Thus, in the previous       */
+/* example, the user could specify just the password without error.  If you   */
+/* wanted the userid and password to be mutually "needee" of each other, then */
+/* you would need to specify an OptionNeed in each direction, one where the   */
+/* userid needs the password, and the other where the password needs the      */
+/* userid.                                                                    */
+/******************************************************************************/
+AddOptionNeed:
+
+  parse arg AON_Needer, AON_Needee
+
+  STAFCommandParser.!OptionNeed.SCP_CurrentParser.0 =,
+      STAFCommandParser.!OptionNeed.SCP_CurrentParser.0 + 1
+
+  AON_Index = STAFCommandParser.!OptionNeed.SCP_CurrentParser.0
+  STAFCommandParser.!OptionNeed.SCP_CurrentParser.AON_Index.!Needer = AON_Needer
+  STAFCommandParser.!OptionNeed.SCP_CurrentParser.AON_Index.!Needee = AON_Needee
+
+  RETURN 0
+
+/* End of AddOptionNeed */
+
+#End
+
+
+#Function NumInstances
+/******************************************************************************/
+/* NumInstances - Determines the number of options specified in the parsed    */
+/*                string                                                      */
+/*                                                                            */
+/* Accepts: Nothing                                                           */
+/*                                                                            */
+/* Returns: The number of options specified in the parsed string              */
+/******************************************************************************/
+NumInstances:
+
+  RETURN STAFCommandParser.!Instance.SCP_CurrentParser.0
+
+/* End of NumInstances */
+
+#End
+
+
+#Function InstanceName
+/******************************************************************************/
+/* InstanceName - Determines the name of the specified option instance        */
+/*                                                                            */
+/* Accepts: The option instance number                                        */
+/*                                                                            */
+/* Returns: The value of the specified option instance                        */
+/******************************************************************************/
+InstanceName:
+
+  parse arg IN_Num
+
+  RETURN STAFCommandParser.!Instance.SCP_CurrentParser.IN_Num.!Name
+
+/* End of InstanceName */
+
+#End
+
+
+#Function InstanceValue
+/******************************************************************************/
+/* InstanceValue - Determines the value of the specified option instance      */
+/*                                                                            */
+/* Accepts: The option instance number                                        */
+/*                                                                            */
+/* Returns: The value of the specified option instance                        */
+/******************************************************************************/
+InstanceValue:
+
+  parse arg IN_Num
+
+  RETURN STAFCommandParser.!Instance.SCP_CurrentParser.IN_Num.!Value
+
+/* End of InstanceValue */
+
+#End
+
+
+#Function NumArguments
+/******************************************************************************/
+/* NumArguments - Determines the number of arguments specified in the parsed  */
+/*                string                                                      */
+/*                                                                            */
+/* Accepts: Nothing                                                           */
+/*                                                                            */
+/* Returns: The number of arguments specified in the parsed string            */
+/******************************************************************************/
+NumArguments:
+
+  RETURN STAFCommandParser.!Arg.SCP_CurrentParser.0
+
+/* End of NumArguments */
+
+#End
+
+
+#Function Argument
+/******************************************************************************/
+/* Argument - Determines the value of the specified argument                  */
+/*                                                                            */
+/* Accepts: The number of the argument                                        */
+/*                                                                            */
+/* Returns: The value of the argument                                         */
+/******************************************************************************/
+Argument:
+
+  parse arg ARG_Num
+
+  RETURN STAFCommandParser.!Arg.SCP_CurrentParser.ARG_Num
+
+/* End of Argument */
+
+#End
+
+
+#Function OptionTimes
+/************************************************************************/
+/* OptionTimes - Determines how many times a given option was specified */
+/*                                                                      */
+/* Accepts: The name of the option                                      */
+/*                                                                      */
+/* Returns: The number of times the option was specified.               */
+/************************************************************************/
+OptionTimes:
+
+  parse arg OT_Name
+
+  OT_Times = 0
+
+  do OT_i = 1 to STAFCommandParser.!Instance.SCP_CurrentParser.0
+      if TRANSLATE(STAFCommandParser.!Instance.SCP_CurrentParser.OT_i.!Name) =,
+         TRANSLATE(OT_Name) then
+      do
+          OT_Times = OT_Times + 1
+      end
+  end
+
+  RETURN OT_Times
+
+#End
+
+
+#Function OptionValue
+/************************************************************************/
+/* OptionValue - Determines the value of the specified occurance of the */
+/*               specified option                                       */
+/*                                                                      */
+/* Accepts: The name of the option of which to determine the value      */
+/*          Which occurance of the option to look for                   */
+/*                                                                      */
+/* Returns: The value of the specified occurance of the given option.   */
+/*          Returns '' if the specified occurance does not exist (and   */
+/*            thus was not specified in the request string )            */
+/************************************************************************/
+OptionValue:
+
+  parse arg OV_Name, OV_Occurance
+
+  if OV_Occurance = '' then OV_Occurance = 1
+
+  OV_Times = 0
+
+  do OV_i = 1 to STAFCommandParser.!Instance.SCP_CurrentParser.0,
+  UNTIL (OV_Times = OV_Occurance)
+      if TRANSLATE(STAFCommandParser.!Instance.SCP_CurrentParser.OV_i.!Name) =,
+         TRANSLATE(OV_Name) then
+      do
+          OV_Times = OV_Times + 1
+      end
+  end
+
+  if OV_Times \= OV_Occurance then RETURN ''
+
+  RETURN STAFCommandParser.!Instance.SCP_CurrentParser.OV_i.!Value
+
+#End
+
+
+#Function ParseString
+/****************************************************************************/
+/* ParseString - Parses a request string                                    */
+/*                                                                          */
+/* Accepts: The request string                                              */
+/*          The name of a variable in which to place error text             */
+/*                                                                          */
+/* Returns: 0 , if successful                                               */
+/*          >0, if an error occurs                                          */
+/****************************************************************************/
+/* --- Internals ---                                                        */
+/* STAFCommandParser.!Option.SCP_CurrentParser.0                            */
+/* STAFCommandParser.!Option.SCP_CurrentParser.i.!Name                      */
+/* STAFCommandParser.!Option.SCP_CurrentParser.i.!Times - 0 = unlimited     */
+/* STAFCommandParser.!Option.SCP_CurrentParser.i.!ValueRequired - Yes, No,  */
+/*                                                                Allowed   */
+/* STAFCommandParser.!OptionGroup.SCP_CurrentParser.0                       */
+/* STAFCommandParser.!OptionGroup.SCP_CurrentParser.i.!Group                */
+/* STAFCommandParser.!OptionGroup.SCP_CurrentParser.i.!Minimum              */
+/* STAFCommandParser.!OptionGroup.SCP_CurrentParser.i.!Maximum              */
+/*                                                                          */
+/* STAFCommandParser.!OptionNeed.SCP_CurrentParser.0                        */
+/* STAFCommandParser.!OptionNeed.SCP_CurrentParser.i.!Needer                */
+/* STAFCommandParser.!OptionNeed.SCP_CurrentParser.i.!Needee                */
+/*                                                                          */
+/* STAFCommandParser.!MaxArguments.SCP_CurrentParser                        */
+/*                                                                          */
+/* PS_Word.0                                                                */
+/* PS_Word.i.!Data                                                          */
+/* PS_Word.i.!Type - Option, Value                                          */
+/*                                                                          */
+/* STAFCommandParser.!Instance.SCP_CurrentParser.0                          */
+/* STAFCommandParser.!Instance.SCP_CurrentParser.i.!Name                    */
+/* STAFCommandParser.!Instance.SCP_CurrentParser.i.!Value                   */
+/*                                                                          */
+/* STAFCommandParser.!Arg.SCP_CurrentParser.0                               */
+/* STAFCommandParser.!Arg.SCP_CurrentParser.i                               */
+/****************************************************************************/
+ParseString:
+
+  parse arg PS_ParseString, PS_ErrorBuffer
+
+  PS_WhiteSpace = '0D0A20'x   /* WhiteSpace = CR LF Space */
+  PS_Word.0 = 0
+  PS_CurrType = "Value"
+  PS_CurrData = ""
+  PS_InQuotes = 0
+  PS_InEscape = 0
+  PS_IsLiteral = 0
+  PS_InLengthField = 0
+  PS_InDataField = 0
+  PS_DataLength = 0
+  STAFCommandParser.!Arg.SCP_CurrentParser.0 = 0
+  STAFCommandParser.!Instance.SCP_CurrentParser.0 = 0
+
+  do PS_i = 1 to LENGTH(PS_ParseString)
+
+      PS_Char = SUBSTR(PS_ParseString, PS_i, 1)
+
+      if (PS_Char = ':') & (PS_InQuotes = 0) & (PS_InEscape = 0) &,
+         (PS_InDataField = 0) & (PS_CurrData = "") then
+      do
+          PS_InLengthField = 1
+      end
+      else if PS_InLengthField then
+      do
+          if PS_Char = ':' then
+          do
+              PS_InLengthField = 0
+              PS_InDataField = 1
+
+              if PS_CurrData = "" then
+              do
+                  call VALUE PS_ErrorBuffer, "Invalid length delimited",
+                                             "data specifier"
+                  RETURN 1
+              end
+
+              PS_DataLength = PS_CurrData
+              PS_CurrType = "Value"
+              PS_CurrData = ""
+          end
+          else if VERIFY(PS_Char, "0123456789") = 0 then
+          do
+              PS_CurrData = PS_CurrData || PS_Char
+          end
+          else
+          do
+              call VALUE PS_ErrorBuffer, "Invalid length delimited",
+                                         "data specifier"
+              RETURN 1
+          end
+
+      end  /* In length field */
+      else if PS_InDataField then
+      do
+          PS_CurrData = PS_CurrData || PS_Char
+          PS_DataLength = PS_DataLength - 1
+
+          if PS_DataLength = 0 then
+          do
+              PS_Word.0 = PS_Word.0 + 1
+              PS_WordIndex = PS_Word.0
+              PS_Word.PS_WordIndex.!Type = PS_CurrType
+              PS_Word.PS_WordIndex.!Data = PS_CurrData
+
+              PS_CurrType = "Value"
+              PS_CurrData = ""
+
+              PS_InDataField = 0
+          end
+      end
+      else if VERIFY(PS_Char, PS_WhiteSpace) = 0 then
+      do
+          PS_InEscape = 0
+
+          if PS_InQuotes then PS_CurrData = PS_CurrData || PS_Char
+          else if PS_CurrData \== "" then
+          do
+              if PS_IsLiteral then
+                  PS_CurrType = "Value"
+              else if ValueIsOption(PS_CurrData) \= 0 then
+                  PS_CurrType = "Option"
+
+              PS_Word.0 = PS_Word.0 + 1
+              PS_WordIndex = PS_Word.0
+              PS_Word.PS_WordIndex.!Type = PS_CurrType
+              PS_Word.PS_WordIndex.!Data = PS_CurrData
+
+              PS_CurrType = "Value"
+              PS_CurrData = ""
+
+              PS_IsLiteral = 0
+          end
+      end  /* if whitespace */
+      else if PS_Char = '\' then
+      do
+          if PS_InQuotes & \PS_InEscape then PS_InEscape = 1
+          else
+          do
+              PS_CurrData = PS_CurrData || PS_Char
+              PS_InEscape = 0
+          end
+      end
+      else if PS_Char = '"' then
+      do
+          if PS_InEscape then PS_CurrData = PS_CurrData || PS_Char
+          else if PS_InQuotes & PS_CurrData \== "" then
+          do
+              if PS_IsLiteral then
+                  PS_CurrType = "Value"
+              else if ValueIsOption(PS_CurrData) \= 0 then
+                  PS_CurrType = "Option"
+
+              PS_Word.0 = PS_Word.0 + 1
+              PS_WordIndex = PS_Word.0
+              PS_Word.PS_WordIndex.!Type = PS_CurrType
+              PS_Word.PS_WordIndex.!Data = PS_CurrData
+
+              PS_CurrType = "Value"
+              PS_CurrData = ""
+
+              PS_InQuotes = 0
+              PS_IsLiteral = 0
+          end
+          else
+          do
+              PS_InQuotes = 1
+              PS_IsLiteral = 1
+          end
+
+          PS_InEscape = 0
+
+      end  /* end if quote character */
+      else
+      do
+          PS_InEscape = 0
+          PS_CurrData = PS_CurrData || PS_Char
+      end
+
+  end  /* looping through parse string */
+
+  if PS_InLengthField | PS_InDataField then
+  do
+      call VALUE PS_ErrorBuffer, "Invalid length delimited data specifier"
+      RETURN 1
+  end
+  else if PS_CurrData \== "" then
+  do
+      if PS_IsLiteral then
+          PS_CurrType = "Value"
+      else if ValueIsOption(PS_CurrData) \= 0 then
+          PS_CurrType = "Option"
+
+      PS_Word.0 = PS_Word.0 + 1
+      PS_WordIndex = PS_Word.0
+      PS_Word.PS_WordIndex.!Type = PS_CurrType
+      PS_Word.PS_WordIndex.!Data = PS_CurrData
+  end
+
+  /* Now walk the word list looking for options, etc. */
+
+  PS_ValueRequirement = "NO"
+  PS_CurrOption = ""
+  PS_CurrValue = ""
+
+  do PS_i = 1 to PS_Word.0
+
+      PS_CurrWord = PS_Word.PS_i.!Data
+
+      if PS_Word.PS_i.!Type = "Option" then
+      do
+          do PS_OptionIndex = 1 to STAFCommandParser.!Option.SCP_CurrentParser.0,
+          UNTIL TRANSLATE(STAFCommandParser.!Option.SCP_CurrentParser.PS_OptionIndex.!Name) =,
+                TRANSLATE(PS_CurrWord)
+          end
+
+          if PS_ValueRequirement = "YES" then
+          do
+              call VALUE PS_ErrorBuffer,  "Option," PS_CurrOption",",
+                         "requires a value"
+              RETURN 1
+          end
+          else if PS_ValueRequirement = "ALLOWED" then
+          do
+              STAFCommandParser.!Instance.SCP_CurrentParser.0 = STAFCommandParser.!Instance.SCP_CurrentParser.0 + 1
+              PS_InstanceIndex = STAFCommandParser.!Instance.SCP_CurrentParser.0
+              STAFCommandParser.!Instance.SCP_CurrentParser.PS_InstanceIndex.!Name = PS_CurrOption
+              STAFCommandParser.!Instance.SCP_CurrentParser.PS_InstanceIndex.!Value = PS_CurrValue
+          end
+
+          /* Check once here for whether this new option instance will */
+          /* exceed the limit for this option                          */
+
+          if (OptionTimes(STAFCommandParser.!Option.SCP_CurrentParser.PS_OptionIndex.!Name) =,
+              STAFCommandParser.!Option.SCP_CurrentParser.PS_OptionIndex.!Times) &,
+             (STAFCommandParser.!Option.SCP_CurrentParser.PS_OptionIndex.!Times \= 0) then
+          do
+              call VALUE PS_ErrorBuffer, "You may have no more than",
+                   STAFCommandParser.!Option.SCP_CurrentParser.PS_OptionIndex.!Times,
+                   "instance(s) of option",
+                   STAFCommandParser.!Option.SCP_CurrentParser.PS_OptionIndex.!Name
+              RETURN 1
+          end
+
+          PS_CurrOption = STAFCommandParser.!Option.SCP_CurrentParser.PS_OptionIndex.!Name
+          PS_CurrValue = ""
+          PS_ValueRequirement =,
+              TRANSLATE(STAFCommandParser.!Option.SCP_CurrentParser.PS_OptionIndex.!ValueRequired)
+
+          if PS_ValueRequirement = "NO" then
+          do
+              STAFCommandParser.!Instance.SCP_CurrentParser.0 = STAFCommandParser.!Instance.SCP_CurrentParser.0 + 1
+              PS_InstanceIndex = STAFCommandParser.!Instance.SCP_CurrentParser.0
+              STAFCommandParser.!Instance.SCP_CurrentParser.PS_InstanceIndex.!Name = PS_CurrOption
+              STAFCommandParser.!Instance.SCP_CurrentParser.PS_InstanceIndex.!Value = PS_CurrValue
+
+              PS_CurrOption = ""
+              PS_CurrValue = ""
+          end
+      end
+      else if PS_ValueRequirement = "NO" then
+      do
+          STAFCommandParser.!Arg.SCP_CurrentParser.0 = STAFCommandParser.!Arg.SCP_CurrentParser.0 + 1
+          PS_ArgIndex = STAFCommandParser.!Arg.SCP_CurrentParser.0
+          STAFCommandParser.!Arg.SCP_CurrentParser.PS_ArgIndex = PS_CurrWord
+      end
+      else
+      do
+          PS_CurrValue = PS_CurrWord
+
+          STAFCommandParser.!Instance.SCP_CurrentParser.0 = STAFCommandParser.!Instance.SCP_CurrentParser.0 + 1
+          PS_InstanceIndex = STAFCommandParser.!Instance.SCP_CurrentParser.0
+          STAFCommandParser.!Instance.SCP_CurrentParser.PS_InstanceIndex.!Name = PS_CurrOption
+          STAFCommandParser.!Instance.SCP_CurrentParser.PS_InstanceIndex.!Value = PS_CurrValue
+
+          PS_CurrOption = ""
+          PS_CurrValue = ""
+
+          PS_ValueRequirement = "NO"
+      end
+
+  end  /* end for each word */
+
+  /* If the last word was an option, we need to check for its value */
+  /* requirements here                                              */
+
+  if PS_ValueRequirement = "YES" then
+  do
+      call VALUE PS_ErrorBuffer, "Option,",
+           STAFCommandParser.!Option.SCP_CurrentParser.PS_OptionIndex.!Name",",
+           "requires a value"
+      RETURN 1
+  end
+  else if PS_ValueRequirement = "ALLOWED" then
+  do
+      STAFCommandParser.!Instance.SCP_CurrentParser.0 = STAFCommandParser.!Instance.SCP_CurrentParser.0 + 1
+      PS_InstanceIndex = STAFCommandParser.!Instance.SCP_CurrentParser.0
+      STAFCommandParser.!Instance.SCP_CurrentParser.PS_InstanceIndex.!Name = PS_CurrOption
+      STAFCommandParser.!Instance.SCP_CurrentParser.PS_InstanceIndex.!Value = PS_CurrValue
+  end
+
+
+  /* Check the restriction on number of arguments */
+
+  if STAFCommandParser.!Arg.SCP_CurrentParser.0 >,
+     STAFCommandParser.!MaxArguments.SCP_CurrentParser then
+  do
+      PS_InvalidArgIndex = STAFCommandParser.!MaxArguments.SCP_CurrentParser + 1
+
+      call VALUE PS_ErrorBuffer, "You may have no more than",
+                 STAFCommandParser.!MaxArguments.SCP_CurrentParser "argument(s).",
+                 "  You specified" STAFCommandParser.!Arg.SCP_CurrentParser.0,
+                 "argument(s).  The first excess argument is, ",
+                 STAFCommandParser.!Arg.SCP_CurrentParser.PS_InvalidArgIndex"."
+      RETURN 1
+  end
+
+
+  /* Now check all the group requirements */
+
+  do PS_i = 1 to STAFCommandParser.!OptionGroup.SCP_CurrentParser.0
+
+      PS_GroupCount = 0
+      PS_GroupWordCount =,
+          WORDS(STAFCommandParser.!OptionGroup.SCP_CurrentParser.PS_i.!Group)
+
+      do PS_j = 1 to PS_GroupWordCount
+          if OptionTimes(WORD(STAFCommandParser.!OptionGroup.SCP_CurrentParser.PS_i.!Group, PS_j)) \= 0 then
+              PS_GroupCount = PS_GroupCount + 1
+      end
+
+      if (PS_GroupCount <,
+          STAFCommandParser.!OptionGroup.SCP_CurrentParser.PS_i.!Minimum) |,
+         (PS_GroupCount >,
+          STAFCommandParser.!OptionGroup.SCP_CurrentParser.PS_i.!Maximum) then
+      do
+          call VALUE PS_ErrorBuffer, "You must have at least",
+               STAFCommandParser.!OptionGroup.SCP_CurrentParser.PS_I.!Minimum",",
+               "but no more than",
+               STAFCommandParser.!OptionGroup.SCP_CurrentParser.PS_I.!Maximum,
+               "of the option(s),",
+               STAFCommandParser.!OptionGroup.SCP_CurrentParser.PS_I.!Group
+          RETURN 1
+      end
+
+  end  /* do for each group */
+
+
+  /* Now check the need requirements */
+
+  do PS_i = 1 to STAFCommandParser.!OptionNeed.SCP_CurrentParser.0
+
+      PS_FoundNeeder = 0
+      PS_FoundNeedee = 0
+
+      do PS_j = 1 to WORDS(STAFCommandParser.!OptionNeed.SCP_CurrentParser.PS_I.!Needer),
+      while PS_FoundNeeder = 0
+          if (OptionTimes(WORD(STAFCommandParser.!OptionNeed.SCP_CurrentParser.PS_i.!Needer, PS_j)) \= 0) then
+              PS_FoundNeeder = 1
+      end
+
+      do PS_j = 1 to WORDS(STAFCommandParser.!OptionNeed.SCP_CurrentParser.PS_I.!Needee),
+      while PS_FoundNeedee = 0
+          if (OptionTimes(WORD(STAFCommandParser.!OptionNeed.SCP_CurrentParser.PS_i.!Needee, PS_j)) \= 0) then
+              PS_FoundNeedee = 1
+      end
+
+      if (PS_FoundNeeder & \PS_FoundNeedee) then
+      do
+          call VALUE PS_ErrorBuffer, "When specifying one of the options",
+               STAFCommandParser.!OptionNeed.SCP_CurrentParser.PS_i.!Needer",",
+               "you must also specify one of the options",
+               STAFCommandParser.!OptionNeed.SCP_CurrentParser.PS_i.!Needee
+          RETURN 1
+      end
+
+  end  /* do for each need */
+
+  RETURN 0
+
+/* End of ParseString */
+
+#From STAFCPar Import OptionTimes ValueIsOption
+
+#End
+
+
+#Function ValueIsOption
+/******************************************************************************/
+/* ValueIsOption - Determines if a given string is an option                  */
+/*                                                                            */
+/* Accepts: The string to check                                               */
+/*                                                                            */
+/* Returns: 0, if the string is not an option                                 */
+/*          Otherwise, returns the index into the current parser's !Option    */
+/*            array which corresponds to this option                          */
+/******************************************************************************/
+ValueIsOption:
+
+  parse arg VIO_Value
+
+  do VIO_i = 1 to STAFCommandParser.!Option.SCP_CurrentParser.0
+      if TRANSLATE(STAFCommandParser.!Option.SCP_CurrentParser.VIO_i.!Name) =,
+         TRANSLATE(VIO_Value) then
+      do
+          RETURN VIO_i
+      end
+  end
+
+  RETURN 0
+
+/* End of ValueIsOption */
+
+#End
