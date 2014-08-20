@@ -20,7 +20,11 @@ except ImportError:
 logging.basicConfig(level=mapi_config.log_level)
 WORK_PATH = mapi_config.broker_api_work_path
 CONFIG_PATH = mapi_config.broker_api_config_path
-
+import secureCloud.config.result_config
+import secureCloud.scAgent.file
+chefLogger = secureCloud.config.result_config.chefLogger
+errorLogger = secureCloud.config.result_config.errorLogger
+stafLogger = secureCloud.config.result_config.stafLogger
 class broker_api:
 
     def __init__(self, auth_type=None, broker=None, broker_passphrase=None, realm=None, access_key_id=None,
@@ -182,7 +186,7 @@ class broker_api:
         pwd_mgr.add_password(self.realm, auth_url, self.broker, self.broker_passphrase)
         opener = urllib2.build_opener()
         opener.add_handler(urllib2.HTTPDigestAuthHandler(pwd_mgr))
-
+        stafLogger.debug("auth_url=%s, broker name=%s, broker_passphrase=%s, realm=%s"%(auth_url,self.broker,self.broker_passphrase,self.realm))
         req = urllib2.Request(auth_url)
         req.add_header('Content-Type', 'application/xml; charset=utf-8')
         req.add_header('BrokerName', self.broker)
@@ -331,11 +335,11 @@ class broker_api:
 
         logging.debug("Start sc_request")
 
-        if not self.session_token:
-            if self.auth_type == "api_auth":
+        #if not self.session_token:
+        if self.auth_type == "api_auth":
                 self.session_token = self.api_key_auth()
 
-            elif self.auth_type == "basic_auth":
+        elif self.auth_type == "basic_auth":
                 self.session_token = self.basic_auth()
 
 
@@ -365,19 +369,20 @@ class broker_api:
         #strWriteString = 'Content-Type', 'application/xml; charset=utf-8'+"\n"+"current request token: " +  self.session_token + "\ncurrent request BrokerName: " + self.broker + "\n"
         #objWriteFile.writelines(strWriteString)
         #objWriteFile.close()
-
+        stafLogger.debug("current request session_token:%s" % (self.session_token))
         #print "current request token:%s" % (self.session_token)
-
+        time.sleep(0.5)
         try:
             sc_get_req = opener.open(req)
 
         except urllib2.HTTPError, e:
             logging.error(e)
+            errorLogger.error("http error: %s"%e)
             return False
 
         rawstr = sc_get_req.read()
         logging.debug("End sc_request")
-
+        stafLogger.debug("request=%s"%rawstr)
         if(rawstr == ""):
             return True
         else:

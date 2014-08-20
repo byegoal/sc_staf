@@ -69,10 +69,12 @@ def main():
     retval = 0
     GLOBAL_SETTING = secureCloud.agentBVT.util.config("%s/product.ini" % MODULE_PATH)
     sc_path = secureCloud.scAgent.Agent.get_sc_root()
+    agent_vm_guid = secureCloud.agentBVT.testingClient.get_agent_vmGuid(sc_path)
+    server_vm_guid = secureCloud.agentBVT.testingClient.get_server_vmGuid_by_agent_vmGuid(agent_vm_guid) 
     boot_device_guid = secureCloud.agentBVT.testingClient.get_boot_device_guid(sc_path)
     stafLogger.debug('Boot device_guid in config.xml: %s \n'%boot_device_guid)
         # All messages which come from "tmstaf" logger will be written into tmstaf.log
-    retval=secureCloud.agentBVT.testingClient.check_device_encrypted_by_device_guid(GLOBAL_SETTING['ManagementAPI']['access_key_id'],GLOBAL_SETTING['ManagementAPI']['secret_access_key'],sc_path,boot_device_guid,360)
+    retval=secureCloud.agentBVT.testingClient.check_device_encrypted_by_device_guid(server_vm_guid,boot_device_guid,sc_path,10)
     
     if retval==0:
         stafLogger.critical('pass: boot is encrypted, boot_device_guid=%s'%boot_device_guid)          

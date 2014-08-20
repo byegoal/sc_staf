@@ -3,8 +3,12 @@ import time
 import logging
 import subprocess
 import sys
-
-
+import secureCloud.config.result_config
+import secureCloud.scAgent.file
+import secureCloud.agentBVT.util
+chefLogger = secureCloud.config.result_config.chefLogger
+stafLogger = secureCloud.config.result_config.stafLogger
+errorLogger = secureCloud.config.result_config.errorLogger
 def windows_partition_disk(temp_folder, disk_number, disk_type, partition_type, drive_letter):
 
     """
@@ -79,10 +83,13 @@ def linux_partition_disk(partition_type, partition_number, partition_size, devic
     # w=write to partition table
 
     #command = """(echo c; echo u; echo n; echo %s; echo %s; echo ; echo %s; echo w) | fdisk %s """ % (partition_type, partition_number, partition_size, device_name)
-    command = """(echo u; echo n; echo %s; echo %s; echo ; echo %s; echo w) | fdisk %s """ % (partition_type, partition_number, partition_size, device_name)
+    #command = """(echo u; echo n; echo %s; echo %s; echo ; echo %s; echo w) | fdisk %s """ % (partition_type, partition_number, partition_size, device_name)
+    command = """(echo n; echo %s; echo %s; echo ; echo %s; echo w) | fdisk %s """ % (partition_type, partition_number, partition_size, device_name)
     logging.info("partition command:" + command)
+    chefLogger.info("partition command:" + command)
     return_code = subprocess.call(command, shell=True)
     logging.info("return code:%s" % str(return_code))
+    stafLogger.debug('partition number=%s, partition_return_code= %s'%(partition_number,return_code))
     count = 0
     while return_code != 0 and count < retry:
         return_code = subprocess.call(command, shell=True)

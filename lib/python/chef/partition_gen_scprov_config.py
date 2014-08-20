@@ -104,33 +104,35 @@ def main(options):
                if not partition_format_list[0] == '':
                    partition_number=0
                    for partition_format in partition_format_list:
-                    partition_list = partition_array[idy].split(',')
                  #do partition
-                    partition_return_code = secureCloud.agentBVT.partition_format_tool.linux_partition_disk('p','',20*(partition_number+1),device_name,0)
-                 #if not partition_return_code==0:
-		#	retval = partition_return_code
-                 #       logging.debug('partition error, return_code = %s'%partition_return_code)
-                # return retval
-                 
+                     partition_return_code = secureCloud.agentBVT.partition_format_tool.linux_partition_disk('p',(partition_number+1),'+20M',device_name,0)             
                  #sync partition table
-                    secureCloud.agentBVT.partition_format_tool.linux_partprobe()
+                     partprobe_return_code = secureCloud.agentBVT.partition_format_tool.linux_partprobe()
+                     stafLogger.debug('partition number=%s, partprobe_return_code= %s'%(partition_number+1,partprobe_return_code))   
+                     partition_number+= 1
+                   format_number=0          
+                   for partition_format in partition_format_list:
+                       #sync partition table
+                     partprobe_return_code = secureCloud.agentBVT.partition_format_tool.linux_partprobe()
+                     stafLogger.debug('partition number=%s, partprobe_return_code= %s'%(format_number+1,partprobe_return_code)) 
                  #do format
-                    partition_device_name = '%s%s'%(device_name,partition_number+1)
-                    if partition_format==None:
+                     partition_device_name = '%s%s'%(device_name,format_number+1)
+                     if partition_format==None:
                         partition_format='ext3'
-                    format_return_code = secureCloud.agentBVT.partition_format_tool.linux_format_partition(partition_device_name,partition_format)
-                    if not format_return_code==0:
+                     format_return_code = secureCloud.agentBVT.partition_format_tool.linux_format_partition(partition_device_name,partition_format)
+                     stafLogger.debug('partition number=%s, format_return_code= %s'%(format_number+1,format_return_code))          
+                     if not format_return_code==0:
                        retval = format_return_code
-                       errorLogger.error('device format error, return_code = %s'%format_return_code)
+                       errorLogger.error('device format error, partition number=%s,return_code = %s'%(format_number+1,format_return_code))
                        return retval
-                    partition_mount_point='/Auto/d0%s0%s'% (device_no[6:],str(partition_number+1))
+                     partition_mount_point='/Auto/d0%s0%s'% (device_no[6:],str(format_number+1))
                  #do mount
-                    mount_return_code = secureCloud.agentBVT.partition_format_tool.linux_mount_partition(partition_device_name,partition_mount_point)
-                    if not mount_return_code==0:
+                     mount_return_code = secureCloud.agentBVT.partition_format_tool.linux_mount_partition(partition_device_name,partition_mount_point)
+                     if not mount_return_code==0:
                         retval = mount_return_code
                         errorLogger.error('device mount error, return_code = %s'%mount_return_code)
                         return retval 
-                    partition_number+= 1
+                     format_number+= 1
            idy += 1             
     if retval==0:
         stafLogger.critical('pass: %s partition,format,mount and generate scprov.ini success'%device_str)

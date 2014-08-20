@@ -391,9 +391,11 @@ class DeviceManagerLinux(DeviceManagerBase):
 
         device_list = list()
         for dev in tmp_device_list:
-            tmp_dev = DeviceLinux(dev)
-            print(tmp_dev)
-            device_list.append(tmp_dev)
+            real_name = getstatusoutput('readlink -e %s' % dev)
+            if real_name.strip() == dev.strip():
+                tmp_dev = DeviceLinux(dev)
+                print(tmp_dev)
+                device_list.append(tmp_dev)
 
         self.device_list = device_list
         return device_list

@@ -1,7 +1,7 @@
 import logging
 import platform
 import secureCloud.scAgent.Agent
-
+import secureCloud.scAgent.file
 
 log_level = logging.DEBUG
 

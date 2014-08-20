@@ -75,7 +75,7 @@ def main(options):
     agent_vm_guid = secureCloud.agentBVT.testingClient.get_agent_vmGuid(sc_path)
     server_vm_guid = secureCloud.agentBVT.testingClient.get_server_vmGuid_by_agent_vmGuid(agent_vm_guid) 
     stafLogger.debug("Start device encryption checking") 
-    device_msuid = secureCloud.agentBVT.testingClient.get_device_guid_by_agent_config(sc_path,device_name)
+    device_msuid = secureCloud.agentBVT.testingClient.get_device_guid_from_server(server_vm_guid,device_name)  
     result=secureCloud.agentBVT.testingClient.check_device_encrypted_by_device_guid(server_vm_guid,device_msuid,sc_path,10)
     
     if result==0:

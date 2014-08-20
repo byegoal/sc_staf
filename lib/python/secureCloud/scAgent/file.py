@@ -6,7 +6,7 @@ import platform
 def setLogFile(logName,strLogLevel,strLog):
         logFile = logging.getLogger(strLog)
         logFile.setLevel(strLogLevel)
-        logFile_hdlr = logging.handlers.RotatingFileHandler(logName, maxBytes=10000, backupCount=5)
+        logFile_hdlr = logging.handlers.RotatingFileHandler(logName, maxBytes=1000000, backupCount=5)
         formatter = logging.Formatter('%(asctime)s [%(module)s] %(message)s')
         logFile_hdlr.setFormatter(formatter)
         logFile.addHandler(logFile_hdlr)       

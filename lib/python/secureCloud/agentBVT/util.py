@@ -90,6 +90,6 @@ def get_file_lines(path):
     return file.readlines()
     
 def gen_config_file(file_name,msg):
-    f = open(file_name, "w")
+    f = open(file_name, "w+")
     f.write(msg)
     f.close()

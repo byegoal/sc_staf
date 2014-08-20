@@ -74,7 +74,7 @@ def main(options):
     agent_vm_guid = secureCloud.agentBVT.testingClient.get_agent_vmGuid(sc_path)
     server_vm_guid = secureCloud.agentBVT.testingClient.get_server_vmGuid_by_agent_vmGuid(agent_vm_guid) 
     device_type = options.device_type
-    stafLogger.debug("Start to distroy device key")
+    stafLogger.debug("Start to distroy device key, agent_vm_guid=%s, server_vm_guid=%s"%(agent_vm_guid,server_vm_guid))
     if device_type=='raid':
         device_msuid = secureCloud.agentBVT.testingClient.get_encrypted_raid()
     else:
@@ -87,18 +87,19 @@ def main(options):
         destroy_result = secureCloud.agentBVT.testingClient.destroy_device_key(server_vm_guid,device_msuid)
         if destroy_result==0:
            stafLogger.critical('pass: device msuid=%s, Invoke DestroyADeviceKey successful.'%(device_msuid))
+                   # invoke readVM API to check device key is destroyed-----------------------------------------------
+           check_result=secureCloud.agentBVT.testingClient.check_device_not_encrypted_server(server_vm_guid,device_msuid,5)
+           if check_result==0:
+               stafLogger.critical('pass: check device msuid=%s status from server successful, not encrypted'%(device_msuid))
+           else:
+               stafLogger.critical('FAIL: check device msuid=%s status from server FAIL, status incorrect'%(device_msuid))
+               errorLogger.error("[DestroyDeviceKey] %s=%s device status incorrect on server"%(device_type,device_msuid))
+               retval=1
         else:
            stafLogger.critical('FAIL: device msuid=%s, Invoke DestroyADeviceKey FAIL.'%(device_msuid))
            errorLogger.error("[DestroyDeviceKey] %s=%s Invoke DestroyADeviceKey got error"%(device_type,device_msuid))
            retval=1
-        # invoke readVM API to check device key is destroyed-----------------------------------------------
-        check_result=secureCloud.agentBVT.testingClient.check_device_not_encrypted_server(GLOBAL_SETTING['ManagementAPI']['access_key_id'],GLOBAL_SETTING['ManagementAPI']['secret_access_key'],server_vm_guid,device_msuid,5)
-        if check_result==0:
-           stafLogger.critical('pass: check device msuid=%s status from server successful, not encrypted'%(device_msuid))
-        else:
-           stafLogger.critical('FAIL: check device msuid=%s status from server FAIL, status incorrect'%(device_msuid))
-           errorLogger.error("[DestroyDeviceKey] %s=%s device status incorrect on server"%(device_type,device_msuid))
-           retval=1
+
     secureCloud.scAgent.file.write_sctm_report(log_path,"Destroy Device Key",retval)
     stafLogger.debug("End of destroy device key")           
     return retval

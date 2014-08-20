@@ -35,20 +35,6 @@ stafLogger = secureCloud.config.result_config.stafLogger
 errorLogger = secureCloud.config.result_config.errorLogger
     
 #TODO: pass credential to mapi, and credential should read from product.ini
-def write_report(path,msg):
-        f = file(path+'result.log', 'r') # open for 'w'riting
-        line = f.readline()
-        f.close()
-        if line== "":
-            poem = ''' ------Test Result------ \n'''
-            f = file(path+'result.log', 'w') # open for 'w'riting
-            f.write(poem) # write text to file
-            f.close() # close the file
-        f = file(path+'result.log', 'a') # open for 'w'riting
-        f.write(msg)
-        f.write('\n')
-         # write text to file
-        f.close() # close the file
     
 def get_vm_guid(vm_name, retry=30):
     x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
@@ -212,34 +198,9 @@ def check_list_vm(access_key_id,secret_access_key):
     xml_result = x.listVM()
 
     return xml_result
-def check_device_encrypted_by_device_guid(server_vm_guid, device_guid, sc_path,retry=60):
-    count = 0
-    x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
-    while (count < retry):
-        xml_result = x.readVM(server_vm_guid)
-        stafLogger.debug("check_device_encrypted_by_device_guid xml_result=%s"%str(xml_result))
-        vm_node = xml_result.getElementsByTagName("vm")[0]
-        devices_node = vm_node.getElementsByTagName("devices")[0]
-        devices = devices_node.getElementsByTagName("device")
-        for device in devices:
-            current_device = device.attributes["name"].value.strip()
-            current_msuid = device.attributes["msUID"].value.strip()
-            logging.debug("current device:%s" % (current_device))
-            logging.debug("current device msuid :%s" % (current_msuid))
-            if device_guid == current_msuid:
-                current_status = device.attributes["deviceStatus"].value.strip()
-                stafLogger.debug("device_name:%s, device_msUID:%s, deviceStatus:%s\n"%(current_device,current_msuid,current_status))
-                if  current_status == "Encrypted":
-                    return 0
-                # else:
-                #    return 1
-
-        time.sleep(10)
-        count += 1
-    return 1
 
 
-def check_device_not_encrypted_server(access_key_id,secret_access_key,server_vm_guid, device_msuid, retry=5):
+def check_device_not_encrypted_server(server_vm_guid, device_msuid, retry=5):
     x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
     count = 0
     while (count < retry):
@@ -262,25 +223,15 @@ def check_device_not_encrypted_server(access_key_id,secret_access_key,server_vm_
         time.sleep(10)
         count += 1
     return 1
-def check_device_encrypted_by_device_guid(access_key_id,secret_access_key,sc_path, device_guid, retry=60):
+def check_device_encrypted_by_device_guid(server_vm_guid, device_guid,sc_path, retry=60):
 
     if device_guid == False:
         logging.debug("cannot find boot_device_guid")
         return 1
-    agent_vmGuid = get_agent_vmGuid(sc_path)
-    logging.debug("agent_vm_guid: %s \n"%agent_vmGuid)
-    if agent_vmGuid == False:
-        logging.debug("cannot find agent_vmGuid")
-        return 1
     x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
-    server_vmGuid = get_server_vmGuid_by_agent_vmGuid(agent_vmGuid)
-    logging.debug("server_vm_guid: %s \n"%server_vmGuid)
-    if server_vmGuid == False:
-        logging.debug("cannot find server_vmGuid")
-        return 1
     count = 0
     while (count < retry):
-        xml_result = x.readVM(server_vmGuid)
+        xml_result = x.readVM(server_vm_guid)
 
         vm_node = xml_result.getElementsByTagName("vm")[0]
         devices_node = vm_node.getElementsByTagName("devices")[0]
@@ -364,20 +315,25 @@ def get_device_guid_by_agent_config(sc_path,device_name):
            device_guid = device.attributes["guid"].value.strip()             
     return device_guid
 
-def get_server_vmGuid_by_agent_vmGuid(agent_vmGuid):
+def get_server_vmGuid_by_agent_vmGuid(agent_vmGuid,retry=6):
     server_vmGuid = None
-    while agent_vmGuid != False:
-        x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
+    x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
+    xml_result = x.listVM()
+    count = 0
+    while (not xml_result) and count < retry:
+        time.sleep(2)
+        count += 1
         xml_result = x.listVM()
-        if xml_result:
-            vm_node = xml_result.getElementsByTagName("vmList")[0]
-            devices_node = vm_node.getElementsByTagName("vms")[0]
-            devices = devices_node.getElementsByTagName("vm")
-            for device in devices:
-             if agent_vmGuid == device.attributes["provisionedImageGUID"].value.strip():
-                    server_vmGuid = device.attributes["imageGUID"].value.strip()
-                    logging.debug("server_vmGuid:" + server_vmGuid)
-                    return server_vmGuid
+        
+    if xml_result:
+       vm_node = xml_result.getElementsByTagName("vmList")[0]
+       devices_node = vm_node.getElementsByTagName("vms")[0]
+       devices = devices_node.getElementsByTagName("vm")
+       for device in devices:
+          if agent_vmGuid == device.attributes["provisionedImageGUID"].value.strip():
+             server_vmGuid = device.attributes["imageGUID"].value.strip()
+             logging.debug("server_vmGuid:" + server_vmGuid)
+             return server_vmGuid
 
     if server_vmGuid == None:
         return False
@@ -408,12 +364,18 @@ def get_encrypted_raid():
            return device_guid          
     
     
-def do_server_provision(vm_guid,device_msuid,preserve_data,file_system,mount_point):
+def do_server_provision(vm_guid,device_msuid,preserve_data,file_system,mount_point,retry=6):
     x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
     encrypt_data = x.create_ecnrypt_data(vm_guid,device_msuid,preserve_data,file_system,mount_point)
     logging.debug(encrypt_data)
     stafLogger.debug(encrypt_data)
+    x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
     result = x.encryptVM(vm_guid,encrypt_data)
+    count = 0
+    while (not result) and count < retry:
+        time.sleep(90)
+        count += 1
+        result = x.encryptVM(vm_guid,encrypt_data)
     stafLogger.debug(result)
     if result==1:
         case_result = 0
@@ -516,14 +478,10 @@ def delete_vm_scmc(agent_vm_guid):
                 stafLogger.debug("device name=%s, device msuid=%s, device status=%s," % (current_device,current_msuid,current_status))
                 if  current_status == "Encrypted":
                   result=destroy_device_key(server_vm_guid,current_msuid)  
-                  if result==1:
-                      continue
-                  else:
-                       retval= 1
         time.sleep(30)
     delete_vm_result = x.deleteVM(server_vm_guid)
     stafLogger.debug("delete server_vm_guid=%s, result=%s"%(server_vm_guid,str(delete_vm_result)))
-    if not delete_vm_result:
+    if delete_vm_result==0:
            errorLogger.error("delete server_vm_guid=%s fail")
            retval= 1
     return retval
