@@ -156,3 +156,8 @@ TimeZone_mapping ={
                     "Armenian Standard Time":"Armenian Standard Time"
 
                     }
+
+if os_type == "Windows":
+    sdk_config_path = "C:\\STAF\\lib\\python\\secureCloud\\config\\.sclib.config"
+else:
+    sdk_config_path = "/usr/local/STAF/lib/python/secureCloud/config/.sclib.config"

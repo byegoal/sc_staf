@@ -1,5 +1,18 @@
-*** START SCRIPT ***
+2014-09-02 15:01:45,651 [check_device_encrypted_boot] *** START BOOT VOLUME ENCRYPTED CHECKING ***
 
-Please input devices
-*** EXIT WITH (1) ***
+2014-09-02 15:02:09,818 [check_device_encrypted_boot] *** START BOOT VOLUME ENCRYPTED CHECKING ***
+
+2014-09-02 15:02:48,220 [check_device_encrypted_boot] *** START BOOT VOLUME ENCRYPTED CHECKING ***
+
+2014-09-02 15:23:03,967 [check_device_encrypted_boot] *** START BOOT VOLUME ENCRYPTED CHECKING ***
+
+2014-09-02 15:23:07,671 [check_device_encrypted_boot] pass: boot is encrypted, boot_device_guid=8f8336b8-cda3-4c74-a3dd-ea80610c913a
+2014-09-02 15:23:07,683 [check_device_encrypted_boot] *** END OF BOOT VOLUME ENCRYPTED CHECKING, EXIT WITH (0) ***
+
+2014-09-02 15:25:24,816 [check_device_encrypted_boot] *** START BOOT VOLUME ENCRYPTED CHECKING ***
+
+2014-09-02 15:26:45,482 [check_device_encrypted_boot] *** START BOOT VOLUME ENCRYPTED CHECKING ***
+
+2014-09-02 15:26:57,045 [check_device_encrypted_boot] pass: boot is encrypted, boot_device_guid=8f8336b8-cda3-4c74-a3dd-ea80610c913a
+2014-09-02 15:26:57,055 [check_device_encrypted_boot] *** END OF BOOT VOLUME ENCRYPTED CHECKING, EXIT WITH (0) ***
 

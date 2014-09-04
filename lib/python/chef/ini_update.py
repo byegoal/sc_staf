@@ -7,8 +7,10 @@ import re
 import cPickle
 import shutil
 from optparse import OptionParser, OptionGroup
-from cookielib import logger
-
+try:
+    from cookielib import logger
+except ImportError, e:
+    logging.debug("import logger fail: %s" % e)
 MODULE_PATH = os.path.dirname(__file__) or os.getcwd()
 TMSTAF_PID_FILE = os.path.join(MODULE_PATH, 'tmstaf.pid')
 
@@ -27,16 +29,14 @@ def addStafLibPath():
 addStafLibPath()
 addTmstafLibPath()
 
-
-import tmstaf.processUtil
 import secureCloud.agentBVT.testingClient
 import secureCloud.agentBVT.util
 import secureCloud.scAgent.file
 import secureCloud.scAgent.Agent
-from tmstaf.testwareConfig import TestwareConfig
-from tmstaf.productSetting import ProductSetting
-from tmstaf.testRunner import BaseTestRunner
-from tmstaf.util import getException
+#from tmstaf.testwareConfig import TestwareConfig
+#from tmstaf.productSetting import ProductSetting
+#from tmstaf.testRunner import BaseTestRunner
+#from tmstaf.util import getException
 import threading
 VERSION = 'v2.1.0'
 
@@ -83,17 +83,32 @@ def main(options):
         errorLogger.error("[INIUPDATE] passphrase is required")
         retval = 1
         return retval
+    if options.auth_name==False:
+        errorLogger.error("[INIUPDATE] auth_name is required")
+        retval = 1
+        return retval
+    if options.auth_password==False:
+        errorLogger.error("[INIUPDATE] auth_password is required")
+        retval = 1
+        return retval
+    if options.ms_host==False:
+        errorLogger.error("[INIUPDATE] MAPI URL is required")
+        retval = 1
+        return retval
         # Load global specific settings
     product_file_path = "%s/product.ini" % MODULE_PATH
     GLOBAL_SETTING = secureCloud.agentBVT.util.config(product_file_path)
     sc_path = secureCloud.scAgent.Agent.get_sc_root()
     broker_api_config_path = secureCloud.managementAPI.mapi_config.broker_api_config_path
-    
+    sdk_config_path = secureCloud.managementAPI.mapi_config.sdk_config_path
     stafLogger.debug("Start ini update") 
     secureCloud.agentBVT.testingClient.ini_update(broker_api_config_path, "sc", "access_key_id", options.access_key_id)
     secureCloud.agentBVT.testingClient.ini_update(broker_api_config_path, "sc", "secret_access_key", options.secret_access_key)
     secureCloud.agentBVT.testingClient.ini_update(broker_api_config_path, "sc", "api_account_id", options.account_id)
     secureCloud.agentBVT.testingClient.ini_update(broker_api_config_path, "sc", "api_passphrase", options.passphrase)
+    secureCloud.agentBVT.testingClient.ini_update(sdk_config_path, "authentication", "AUTH_NAME", options.auth_name)
+    secureCloud.agentBVT.testingClient.ini_update(sdk_config_path, "authentication", "AUTH_PASSWORD", options.auth_password)
+    secureCloud.agentBVT.testingClient.ini_update(sdk_config_path, "authentication", "MS_HOST", options.ms_host)
     stafLogger.debug("End of ini update") 
     
     return retval
@@ -122,6 +137,15 @@ def _handle_options(argv):
     action_group.add_option('-p', '--passphrase', type='string', dest='passphrase',
                     default=False,metavar= 'passphrase',
                     help='secure cloud account passphrase')
+    action_group.add_option('-n', '--auth-name', type='string', dest='auth_name',
+                    default=False,metavar= 'auth_name',
+                    help='secure cloud account name')
+    action_group.add_option('-w', '--auth-password', type='string', dest='auth_password',
+                    default=False,metavar= 'auth_password',
+                    help='secure cloud account password')
+    action_group.add_option('-m', '--ms-host', type='string', dest='ms_host',
+                    default=False,metavar= 'ms_host',
+                    help='MAPI base url')
     parser.add_option_group(action_group)
     (options, args) = parser.parse_args(argv)  
     return options 

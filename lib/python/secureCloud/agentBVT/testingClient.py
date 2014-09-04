@@ -13,8 +13,6 @@ import sys
 from subprocess import Popen, PIPE
 from urllib2 import urlopen, HTTPError, URLError
 from xml.dom import minidom
-import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import Element
 
 import secureCloud.agentBVT.util
 
@@ -101,7 +99,7 @@ def get_device_guid(vm_name, device_name, retry = 60):
         count += 1
 
     return False
-def get_device_guid_from_server(server_vm_guid, device_name, retry = 60):
+def get_device_guid_from_server(server_vm_guid, device_name, retry = 5):
     x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
     count = 0
     while(count < retry):
@@ -223,14 +221,16 @@ def check_device_not_encrypted_server(server_vm_guid, device_msuid, retry=5):
         time.sleep(10)
         count += 1
     return 1
-def check_device_encrypted_by_device_guid(server_vm_guid, device_guid,sc_path, retry=60):
-
+def check_device_encrypted_by_device_guid(server_vm_guid, device_guid,sc_path, retry=5):
+ 
     if device_guid == False:
         logging.debug("cannot find boot_device_guid")
+        errorLogger.error("Can't find device_msuid from config.xml, server_vm_guid=%s"%server_vm_guid)
         return 1
-    x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
     count = 0
     while (count < retry):
+        x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
+        chefLogger.info("check_device_encrypted_by_device_guid error, retry=%s"%count)
         xml_result = x.readVM(server_vm_guid)
 
         vm_node = xml_result.getElementsByTagName("vm")[0]
@@ -242,6 +242,32 @@ def check_device_encrypted_by_device_guid(server_vm_guid, device_guid,sc_path, r
             logging.debug("current device:%s" % (current_device))
             logging.debug("current device msuid :%s" % (current_msuid))
             if device_guid == current_msuid:
+                current_status = device.attributes["deviceStatus"].value.strip()
+                if  current_status == "Encrypted":
+                    return 0
+                # else:
+                #    return 1
+
+        time.sleep(10)
+        count += 1
+    return 1
+
+def check_device_encrypted_by_device_name(server_vm_guid, device_name,sc_path, retry=5):
+    count = 0
+    while (count < retry):
+        x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
+        chefLogger.info("check_device_encrypted_by_device_guid error, retry=%s"%count)
+        xml_result = x.readVM(server_vm_guid)
+
+        vm_node = xml_result.getElementsByTagName("vm")[0]
+        devices_node = vm_node.getElementsByTagName("devices")[0]
+        devices = devices_node.getElementsByTagName("device")
+        for device in devices:
+            current_device = device.attributes["name"].value.strip()
+            current_msuid = device.attributes["msUID"].value.strip()
+            logging.debug("current device:%s" % (current_device))
+            logging.debug("current device msuid :%s" % (current_msuid))
+            if device_name == current_device:
                 current_status = device.attributes["deviceStatus"].value.strip()
                 if  current_status == "Encrypted":
                     return 0
@@ -285,23 +311,22 @@ def get_boot_device_guid(sc_path):
     devices = agent_node.getElementsByTagName("devices")[0]
     devices_node = devices.getElementsByTagName("device")
     for device in devices_node:
-        
         if device.attributes["diskType"].value.strip()=='root':
-           boot_device_guid = device.attributes["guid"].value.strip()         
-    
+           boot_device_guid = device.attributes["guid"].value.strip()  
+    if boot_device_guid==None:
+       errorLogger.error("[get_boot_device_guid] boot_device_guid is null in config.xml of Agent")       
     return boot_device_guid
 
 def get_agent_vmGuid(sc_path):
-    agent_vmGuid = None
+    agent_vm_guid = None
     config_xml_data= agent_config_xml_data(sc_path)
     root_node = config_xml_data.getElementsByTagName("secureCloud")[0]
     agent_node = root_node.getElementsByTagName("agent")[0]
     key_node = agent_node.getElementsByTagName("key")[0]
-    agent_vmGuid=key_node.attributes["id"].value.strip()
-    if agent_vmGuid==None:
-        return False
-    else:
-        return agent_vmGuid
+    agent_vm_guid=key_node.attributes["id"].value.strip()
+    if agent_vm_guid==None:
+       errorLogger.error("[get_agent_vmGuid] agent_vm_guid is null in config.xml of Agent")
+    return agent_vm_guid
 
 def get_device_guid_by_agent_config(sc_path,device_name):
     device_guid=None
@@ -312,8 +337,12 @@ def get_device_guid_by_agent_config(sc_path,device_name):
     devices_node = devices.getElementsByTagName("device")
     for device in devices_node:        
         if device.attributes["deviceName"].value.strip()==device_name.strip():
-           device_guid = device.attributes["guid"].value.strip()             
-    return device_guid
+           device_guid = device.attributes["guid"].value.strip()
+    if device_guid==None or device_guid=='':
+       errorLogger.error("[get_device_guid_by_agent_config] Can not find %s device_guid in config.xml of Agent" %device_name)
+       return None
+    else:
+        return device_guid             
 
 def get_server_vmGuid_by_agent_vmGuid(agent_vmGuid,retry=6):
     server_vmGuid = None
@@ -364,16 +393,15 @@ def get_encrypted_raid():
            return device_guid          
     
     
-def do_server_provision(vm_guid,device_msuid,preserve_data,file_system,mount_point,retry=6):
+def do_server_provision(vm_guid,device_msuid,preserve_data,file_system,mount_point,retry=5):
     x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
     encrypt_data = x.create_ecnrypt_data(vm_guid,device_msuid,preserve_data,file_system,mount_point)
-    logging.debug(encrypt_data)
     stafLogger.debug(encrypt_data)
-    x = secureCloud.managementAPI.mapi_lib.mapi_lib(auth_type="api_auth")
     result = x.encryptVM(vm_guid,encrypt_data)
     count = 0
+    chefLogger.info("do_server_provision, retry=%s "%count)
     while (not result) and count < retry:
-        time.sleep(90)
+        time.sleep(16)
         count += 1
         result = x.encryptVM(vm_guid,encrypt_data)
     stafLogger.debug(result)

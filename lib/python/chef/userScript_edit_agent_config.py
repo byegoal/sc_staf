@@ -7,7 +7,10 @@ import re
 import cPickle
 import shutil
 from optparse import OptionParser, OptionGroup
-from cookielib import logger
+try:
+    from cookielib import logger
+except ImportError, e:
+    logging.debug("import logger fail: %s" % e)
 
 MODULE_PATH = os.path.dirname(__file__) or os.getcwd()
 TMSTAF_PID_FILE = os.path.join(MODULE_PATH, 'tmstaf.pid')

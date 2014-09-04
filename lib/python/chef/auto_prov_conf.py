@@ -27,16 +27,11 @@ def addStafLibPath():
 addStafLibPath()
 addTmstafLibPath()
 
-
-import tmstaf.processUtil
-import secureCloud.agentBVT.testingClient
-import secureCloud.agentBVT.util
+import sdkMapi.MAPI_Service as MAPI_Service
+import sdkMapi.MAPI_Inventory as MAPI_Inventory
+import secureCloud.agentBVT.testingClient as testingClient
 import secureCloud.scAgent.file
 import secureCloud.scAgent.Agent
-from tmstaf.testwareConfig import TestwareConfig
-from tmstaf.productSetting import ProductSetting
-from tmstaf.testRunner import BaseTestRunner
-from tmstaf.util import getException
 import threading
 VERSION = 'v2.1.0'
 
@@ -70,19 +65,25 @@ def main(options):
         errorLogger.error("[AutoProv] auto provision setting is required")
         return 1
         # Load global specific settings
-    GLOBAL_SETTING = secureCloud.agentBVT.util.config("%s/product.ini" % MODULE_PATH)
     sc_path = secureCloud.scAgent.Agent.get_sc_root()
     auto_prov = options.auto_prov
-    agent_vm_guid = secureCloud.agentBVT.testingClient.get_agent_vmGuid(sc_path)
-    server_vm_guid = secureCloud.agentBVT.testingClient.get_server_vmGuid_by_agent_vmGuid(agent_vm_guid) 
+    agent_vm_guid = testingClient.get_agent_vmGuid(sc_path)
+    if agent_vm_guid is None or agent_vm_guid==False or agent_vm_guid =='':
+        errorLogger.error("[main] agent_vm_guid is null in config.xml")
+        return 1
+    server_vm_guid = MAPI_Inventory.getImageGUID(agent_vm_guid) 
+    if not server_vm_guid or server_vm_guid =='':
+        errorLogger.error("[main] server_vm_guid is null by invoke listVM")
+        return 1
+    chefLogger.info("agent_vm_guid=%s, server_vm_guid=%s \n" % (agent_vm_guid,server_vm_guid)) 
     stafLogger.debug("Start to do auto-provision setting update")  
-    result=secureCloud.agentBVT.testingClient.update_auto_prov(server_vm_guid,auto_prov)
+    result=MAPI_Service.IsUpdatedAutoProvConf(server_vm_guid,auto_prov)
     if result==0:
             stafLogger.critical('pass: auto-provision conf update successful')
     else:
             stafLogger.critical('FAIL: auto-provision conf update fail')
             retval=1
-    secureCloud.scAgent.file.write_sctm_report(log_path,"Update Auto-Provision Conf",result)
+    
     stafLogger.debug("End of auto-provision setting update")           
     return retval
         
@@ -112,5 +113,6 @@ if __name__ == "__main__":
     if __retval__ == 0:
         __options__ = _handle_options(sys.argv[1:])
         __retval__ = main(__options__)
-    stafLogger.critical('*** EXIT WITH (%s) ***\n' %str(__retval__))        
+    stafLogger.critical('*** EXIT WITH (%s) ***\n' %str(__retval__))    
+    secureCloud.scAgent.file.write_sctm_report(log_path,"Update Auto-Provision Conf",__retval__)    
     sys.exit(__retval__)

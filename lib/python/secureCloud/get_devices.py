@@ -5,7 +5,10 @@ import sys
 import os
 import platform
 import subprocess
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import logging
 import ConfigParser
 import tempfile
@@ -454,8 +457,10 @@ def main(options):
         for device in device_mgr.find_new_devices():
             if idx != 0:
                 device_str += ', '
-
-            device_str += device.disk_name
+            if platform.system()=='Windows':
+                device_str += "harddisk%s"%device.disk_name 
+            else:
+                device_str += device.disk_name
             idx += 1
 
         f.write(device_str)

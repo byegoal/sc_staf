@@ -7,7 +7,10 @@ import re
 import cPickle
 import shutil
 from optparse import OptionParser, OptionGroup
-from cookielib import logger
+try:
+    from cookielib import logger
+except ImportError, e:
+    logging.debug("import logger fail: %s" % e)
 
 MODULE_PATH = os.path.dirname(__file__) or os.getcwd()
 TMSTAF_PID_FILE = os.path.join(MODULE_PATH, 'tmstaf.pid')
@@ -27,15 +30,11 @@ def addStafLibPath():
 addStafLibPath()
 addTmstafLibPath()
 
-
-import tmstaf.processUtil
-import secureCloud.agentBVT.testingClient
+import sdkMapi.MAPI_Service as MAPI_Service
+import sdkMapi.MAPI_Inventory as MAPI_Inventory
+import secureCloud.agentBVT.testingClient as testingClient
 import secureCloud.agentBVT.util
 import secureCloud.scAgent.Agent
-from tmstaf.testwareConfig import TestwareConfig
-from tmstaf.productSetting import ProductSetting
-from tmstaf.testRunner import BaseTestRunner
-from tmstaf.util import getException
 import threading
 VERSION = 'v2.1.0'
 
@@ -65,13 +64,21 @@ class TmstafMain:
         
 def main(options):
     retval = 0
+    sc_path = secureCloud.scAgent.Agent.get_sc_root()
     if not options.device_array:
         errorLogger.error("[ServerProv] devices is required")
         retval = 1
         return retval
+    agent_vm_guid = testingClient.get_agent_vmGuid(sc_path)
+    if agent_vm_guid is None or agent_vm_guid==False or agent_vm_guid =='':
+        errorLogger.error("[main] agent_vm_guid is null in config.xml")
+        return 1
+    server_vm_guid = MAPI_Inventory.getImageGUID(agent_vm_guid) 
+    if not server_vm_guid or server_vm_guid =='':
+        errorLogger.error("[main] server_vm_guid is null by invoke listVM")
+        return 1
         # Load global specific settings
-    GLOBAL_SETTING = secureCloud.agentBVT.util.config("%s/product.ini" % MODULE_PATH)
-    sc_path = secureCloud.scAgent.Agent.get_sc_root()
+
     scprov_config_path = sc_path+'/scprov.ini'
     scprov_config = secureCloud.agentBVT.util.config(scprov_config_path)
     devices_list = options.device_array.split(',') 
@@ -79,13 +86,11 @@ def main(options):
     #do find device_name_list
     for devices in devices_list:
         device_name = scprov_config[devices]['device_name']
-        agent_vmGuid = secureCloud.agentBVT.testingClient.get_agent_vmGuid(sc_path)
-        vm_guid = secureCloud.agentBVT.testingClient.get_server_vmGuid_by_agent_vmGuid(agent_vmGuid)
         device_msuid = secureCloud.agentBVT.testingClient.get_device_guid_by_agent_config(sc_path,device_name)
         if(device_msuid)==None:
-            errorLogger.error("[ServerProv] device_msuid is null,device_name=%s, agent_vm_guid=%s"%(device_name,agent_vmGuid))
+            errorLogger.error("[ServerProv] Can't not find device_msuid from config.xml, device_name=%s, agent_vm_guid=%s"%(device_name,agent_vm_guid))
             retval = 1
-            secureCloud.scAgent.file.write_sctm_report(log_path,"Server Provision",retval)
+            
             return retval
         if not scprov_config[devices].has_key('existing_data') :
             preserve_data='yes'
@@ -101,14 +106,14 @@ def main(options):
                 file_system = ''
                 mount_point= ''            
         stafLogger.debug("Start to request server provision")
-        server_prov_result=secureCloud.agentBVT.testingClient.do_server_provision(vm_guid,device_msuid,preserve_data,file_system,mount_point)
-        if server_prov_result==0:
+        device_guid = MAPI_Inventory.getDeviceGUID(server_vm_guid,device_name)
+        result = MAPI_Inventory.encryptDevice(server_vm_guid,device_guid,file_system, mount_point,preserve_data)
+        if result==0:
             stafLogger.critical('pass: %s is doing server provision, msuid=%s'%(device_name,device_msuid))
         else:
             stafLogger.critical('FAIL: %s can not do server provision, msuid=%s'%(device_name,device_msuid))
             errorLogger.error("[ServerProv] FAIL: %s can not do server provision, msuid=%s"%(device_name,device_msuid))
             retval=1
-    secureCloud.scAgent.file.write_sctm_report(log_path,"Server Provision",retval)
     stafLogger.debug("End of server provision")           
     return retval
         
@@ -138,4 +143,5 @@ if __name__ == "__main__":
         __options__ = _handle_options(sys.argv[1:])
         __retval__ = main(__options__)
     stafLogger.critical('*** EXIT WITH (%s) ***\n' %str(__retval__))
+    secureCloud.scAgent.file.write_sctm_report(log_path,"Server Provision",__retval__)
     sys.exit(__retval__)

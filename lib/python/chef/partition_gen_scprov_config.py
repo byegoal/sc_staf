@@ -9,7 +9,10 @@ import re
 import cPickle
 import shutil
 import platform
-from cookielib import logger
+try:
+    from cookielib import logger
+except ImportError, e:
+    logging.debug("import logger fail: %s" % e)
 from optparse import OptionParser, OptionGroup
 
 MODULE_PATH = os.path.dirname(__file__) or os.getcwd()
@@ -30,16 +33,10 @@ def addStafLibPath():
 addStafLibPath()
 addTmstafLibPath()
 
-
-import tmstaf.processUtil
 import secureCloud.agentBVT.testingClient
 import secureCloud.agentBVT.util
 import secureCloud.agentBVT.partition_format_tool
 import secureCloud.scAgent.Agent
-from tmstaf.testwareConfig import TestwareConfig
-from tmstaf.productSetting import ProductSetting
-from tmstaf.testRunner import BaseTestRunner
-from tmstaf.util import getException
 import threading
 VERSION = 'v2.1.0'
 

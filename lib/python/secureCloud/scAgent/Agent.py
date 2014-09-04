@@ -2,7 +2,6 @@ import sys
 import os
 import platform
 import subprocess
-import json
 import logging
 import ConfigParser
 import tempfile
@@ -29,12 +28,12 @@ def get_sc_root():
             if root_dir[len(root_dir)-1] == '/' or \
                             root_dir[len(root_dir)-1] == '\\':
                 root_dir = root_dir[:len(root_dir)-1]
-
+            root_dir += '\\'
             return root_dir
         else:
             return '/var/lib/securecloud/'
 
-            
+              
 def get_scconfig_path():
     sc_path = get_sc_root()
     if platform.system() == "Windows":

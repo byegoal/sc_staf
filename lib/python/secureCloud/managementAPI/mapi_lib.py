@@ -54,6 +54,7 @@ class mapi_lib:
 	# VM
 	def listVM(self):
 		result = self.broker_api.listVM()
+		stafLogger.debug("listVM() result=%s"%str(result))
 		if not result:
 			return False
 		self.log_xml(result, self.listVM.__name__)
@@ -63,7 +64,7 @@ class mapi_lib:
 
 	def readVM(self, vm_guid):
 		result = self.broker_api.readVM(vm_guid)
-		stafLogger.debug("readVM() result=%s"%str())
+		stafLogger.debug("readVM() result=%s"%str(result))
 		if not result:
 			return False		
 		self.log_xml(result, self.readVM.__name__)
@@ -145,7 +146,7 @@ class mapi_lib:
 	
 	def encryptVM(self,vm_guid,encrypt_data):       	   
 		result = self.broker_api.encryptVM(vm_guid, encrypt_data)
-		stafLogger.debug("Invoke encryptVM() result=%s"%result)
+		stafLogger.debug("Invoke encryptVM() result=%s"%str(result))
 		return result
 	
 	""" Sample

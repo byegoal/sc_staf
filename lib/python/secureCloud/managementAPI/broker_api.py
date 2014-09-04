@@ -9,6 +9,8 @@ import logging
 import mapi_util
 import mapi_config
 import os
+from socket import error as SocketError
+import errno
 try:
     import hashlib
 except ImportError:
@@ -117,8 +119,11 @@ class broker_api:
             return False
 
         session_token = self.userAuthenticationResponse(auth_id, random_data)
+        stafLogger.debug("2. session_token=%s"%self.session_token)
         #logging.debug("session_token:%s" % (session_token))
+        
         if not session_token:
+            errorLogger.error("userAuthetication Response is null")
             return False
 
         return session_token
@@ -140,14 +145,20 @@ class broker_api:
             sc_get_req = opener.open(req)
         except urllib2.HTTPError, e:
             logging.error(e)
+            errorLogger.error(e)
             return False, False
         except urllib2.URLError, e:
             logging.error(e)
+            errorLogger.error(e)
             return False, False
-
-        res = sc_get_req.read()
+        except SocketError, e:
+            if e.errno != errno.ECONNRESET:
+                errorLogger.error('userAuthenticationRequest Error, message=%s'%e)
+                return False, False
 
         try:
+            res = sc_get_req.read()
+            stafLogger.debug("userAuthenticationRequest sc_res=%s"%str(res))
             xmldata = xml.dom.minidom.parseString(res)
             auth_result = xmldata.getElementsByTagName("authentication")[0]
             auth_id = auth_result.attributes["id"].value.strip()
@@ -155,6 +166,7 @@ class broker_api:
             #print "Get Challenge:\nid = %s\nrandom_data = %s\n" % (auth_id, randata)
         except Exception, e:
             logging.error(e)
+            errorLogger.error(e)
             return False, False
 
         #logging.debug("auth_id:%s, random_data:%s" % (auth_id, random_data))
@@ -186,7 +198,7 @@ class broker_api:
         pwd_mgr.add_password(self.realm, auth_url, self.broker, self.broker_passphrase)
         opener = urllib2.build_opener()
         opener.add_handler(urllib2.HTTPDigestAuthHandler(pwd_mgr))
-        stafLogger.debug("auth_url=%s, broker name=%s, broker_passphrase=%s, realm=%s"%(auth_url,self.broker,self.broker_passphrase,self.realm))
+        #stafLogger.debug("auth_url=%s, broker name=%s, broker_passphrase=%s, realm=%s"%(auth_url,self.broker,self.broker_passphrase,self.realm))
         req = urllib2.Request(auth_url)
         req.add_header('Content-Type', 'application/xml; charset=utf-8')
         req.add_header('BrokerName', self.broker)
@@ -196,15 +208,19 @@ class broker_api:
             sc_get_req = opener.open(req)
         except urllib2.HTTPError, e:
             logging.error(e)
+            errorLogger.error("userAuthenticationResponse error:%"%e)
             return False
         except urllib2.URLError, e:
             logging.error(e)
+            errorLogger.error("userAuthenticationResponse error:%"%e)
             return False
 
         res = sc_get_req.read()
+        stafLogger.debug("api response:%s" % str(res))
         xmldata = xml.dom.minidom.parseString(res)
         auth_result = xmldata.getElementsByTagName("authenticationResult")[0]
         session_token = auth_result.attributes["token"].value.strip()
+        stafLogger.debug("api response, session_token:%s" % (session_token))
         #logging.debug("session token : %s" % session_token)
 
         return session_token
@@ -285,9 +301,11 @@ class broker_api:
             sc_get_req = opener.open(req)
         except urllib2.HTTPError, e:
             logging.error(e)
+            errorLogger.error(e)
             return False
         except urllib2.URLError, e:
             logging.error(e)
+            errorLogger.error(e)
             return False
 
         res = sc_get_req.read()
@@ -326,68 +344,75 @@ class broker_api:
             #print certificate
         except Exception, e:
             logging.error(e)
+            errorLogger.error(e)
             return False
 
         return certificate
 
 
     def sc_request(self, resource='', method='get', data=''):
-
-        logging.debug("Start sc_request")
-
-        #if not self.session_token:
-        if self.auth_type == "api_auth":
+      try:
+         logging.debug("Start sc_request")
+         stafLogger.debug("Start sc_request")
+         if not self.session_token:
+            if self.auth_type == "api_auth":
                 self.session_token = self.api_key_auth()
 
-        elif self.auth_type == "basic_auth":
+            elif self.auth_type == "basic_auth":
                 self.session_token = self.basic_auth()
 
 
+         
+         pwd_mgr = urllib2.HTTPPasswordMgr()
+         api_url = self.base_url+'/'+resource+'/'
+         pwd_mgr.add_password(self.realm, api_url, self.broker, self.broker_passphrase)
+         opener = urllib2.build_opener()
+         opener.add_handler(urllib2.HTTPDigestAuthHandler(pwd_mgr))
 
-        pwd_mgr = urllib2.HTTPPasswordMgr()
-        api_url = self.base_url+'/'+resource+'/'
-        pwd_mgr.add_password(self.realm, api_url, self.broker, self.broker_passphrase)
-        opener = urllib2.build_opener()
-        opener.add_handler(urllib2.HTTPDigestAuthHandler(pwd_mgr))
+         req = urllib2.Request(api_url)
 
-        req = urllib2.Request(api_url)
+         logging.debug("url:%s" % (api_url))
 
-        logging.debug("url:%s" % (api_url))
-
-        if method == 'post' and data != '':
+         if method == 'post' and data != '':
             logging.debug(data)
             req.add_data(data)
-        elif method == 'delete':
+         elif method == 'delete':
             req.get_method = lambda: 'DELETE'
-        else:
+         else:
             pass
-
-        req.add_header('Content-Type', 'application/xml; charset=utf-8')
-        req.add_header('BrokerName', self.broker)
-        req.add_header('X-UserSession', self.session_token)
-        #objWriteFile = open("C:\\Documents and Settings\\Administrator\\Desktop\\result.txt","a")
+        
+         req.add_header('Content-Type', 'application/xml; charset=utf-8')
+         req.add_header('BrokerName', self.broker)
+         req.add_header('X-UserSession', self.session_token)
+          #objWriteFile = open("C:\\Documents and Settings\\Administrator\\Desktop\\result.txt","a")
         #strWriteString = 'Content-Type', 'application/xml; charset=utf-8'+"\n"+"current request token: " +  self.session_token + "\ncurrent request BrokerName: " + self.broker + "\n"
         #objWriteFile.writelines(strWriteString)
         #objWriteFile.close()
-        stafLogger.debug("current request session_token:%s" % (self.session_token))
+        #stafLogger.debug("current request session_token:%s" % (self.session_token))
         #print "current request token:%s" % (self.session_token)
-        time.sleep(0.5)
-        try:
+         try:
             sc_get_req = opener.open(req)
 
-        except urllib2.HTTPError, e:
+         except urllib2.HTTPError, e:
             logging.error(e)
             errorLogger.error("http error: %s"%e)
             return False
-
-        rawstr = sc_get_req.read()
-        logging.debug("End sc_request")
-        stafLogger.debug("request=%s"%rawstr)
-        if(rawstr == ""):
+         except Exception, e:
+            errorLogger.error("2.sc_request error: %s"%e)
+            return False
+         rawstr = sc_get_req.read()
+         logging.debug("End sc_request")
+         stafLogger.debug("End sc_request")
+        #stafLogger.debug("request=%s"%rawstr)
+         if(rawstr == ""):
             return True
-        else:
+         else:
             return rawstr
-
+        
+      except Exception, e:
+            errorLogger.error("sc_request Error: %s"%e)
+            time.sleep(0.5)
+            return False
 
     def digest_authentication_test(self, realm, digest_broker_name, digest_broker_pass, header_broker_name):
 

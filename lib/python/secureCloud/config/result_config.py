@@ -8,7 +8,7 @@ log_level = logging.DEBUG
 os_type = platform.system()
 
 if platform.system() == "Windows":
-        result_path='C:\\STAF\\lib\\python\\secureCloud\\chef\\result\\'
+        result_path='C:\\STAF\\lib\\python\\chef\\result\\'
 else:
         result_path = '/usr/local/STAF/lib/python/chef/result/'
 
